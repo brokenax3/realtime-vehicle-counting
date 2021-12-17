@@ -1,0 +1,15 @@
+# Cache for LSP
+.ccls-cache
+
+# Build Directories
+build
+Debug
+
+# Files for Articles
+pdf
+
+# Reports
+report
+
+# Test Footage
+test_video
