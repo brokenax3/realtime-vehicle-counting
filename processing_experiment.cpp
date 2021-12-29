@@ -7,6 +7,31 @@
 using namespace cv;
 using namespace std;
 
+Mat makeSkewImg(Mat imgInput)
+{
+    float w = 200, h = 400;
+    Mat imgWarp;
+
+    Point2f src[4] = {
+        {144,0},
+        {220,0},
+        {9,200},
+        {362,200}
+    };
+
+    Point2f dst[4] = {
+        {0.0f, 0.0f},
+        {w, 0.0f},
+        {0.0f, h},
+        {w, h}
+    };
+    
+    Mat matrix = getPerspectiveTransform(src, dst);
+    warpPerspective(imgInput, imgWarp, matrix, Point(w, h));
+    /* imshow("Warp", imgWarp); */
+    return imgWarp;
+}
+
 void getContours(Mat imgInput, Mat img)
 {
 
@@ -58,44 +83,40 @@ int main()
     int lowThreshold = 40;
 
     /* VideoCapture cap("test_video/hd_autobitrate_close_view.mp4"); */
-    VideoCapture cap("test_video/360p_close_view.mp4");
+    VideoCapture cap("test_video/360p_close_view_gphoto.mp4");
     Ptr<BackgroundSubtractor> pBacksub;
     Mat img;
-    /* Mat img = imread("test_video/test.png"); */
 
     pBacksub = createBackgroundSubtractorKNN();
 
     Mat imgGrey, imgBlur, imgCanny, imgDilate, imgBlurBlur, mask, imgErode;
 
+    Mat imgWarp;
     Mat imgTemp;
 
     while(true)
     {
-        /* cap.set(CAP_PROP_POS_MSEC, 3000); */
         cap.read(img);
+
         if(img.empty())
         {
             cap.set(CAP_PROP_POS_AVI_RATIO, 0);
             cap.read(img);
         }
         cvtColor(img, imgGrey, COLOR_BGR2GRAY);
-        /* bilateralFilter(imgGrey, imgBlur, 5, 50, 50); */
         GaussianBlur(imgGrey, imgBlur, Size(5, 5), 0);
         pBacksub -> apply(imgBlur, mask);
 
 
-        /* Canny(imgBlur, imgCanny, lowThreshold, lowThreshold*ratio); */
-
-
-        /* Mat ekernel = getStructuringElement(MORPH_RECT, Size(1, 1)); */
-        Mat kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+        Mat ekernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+        Mat kernel = getStructuringElement(MORPH_RECT, Size(10, 10));
         /* erode(mask, imgErode, ekernel); */
         /* dilate(imgErode, imgDilate, kernel); */
         /* dilate(imgDilate, imgDilate, kernel); */
         /* dilate(imgDilate, imgDilate, kernel); */
         morphologyEx(mask, imgTemp, MORPH_OPEN, kernel);
         morphologyEx(imgTemp, imgErode, MORPH_CLOSE, kernel);
-        morphologyEx(imgErode, imgDilate, MORPH_OPEN, kernel);
+        morphologyEx(imgErode, imgDilate, MORPH_OPEN, ekernel);
 
         getContours(imgDilate, img);
 
