@@ -94,16 +94,21 @@ int main()
         img = imgNext;
         cap.read(imgNext);
         cvtColor(imgNext, imgNext, COLOR_BGR2GRAY);
-        resize(imgNext, imgNext, Size(), 0.4, 0.4, INTER_LINEAR);
+        resize(imgNext, imgNext, Size(), 0.5, 0.5, INTER_LINEAR);
         if(firstFrame == 0)
         {
             absdiff(imgNext, img, imgDiff);
-            GaussianBlur(imgDiff, imgDiff, Size(5, 5), 0);
-            threshold(imgDiff, mask, 25, 255, THRESH_BINARY);
-            Mat kernel = getStructuringElement(MORPH_RECT, Size(10, 10));
-            Mat ekernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+            /* medianBlur(imgDiff, imgDiff, 3); */
+            GaussianBlur(imgDiff, imgDiff, Size(1, 1), 0);
+            threshold(imgDiff, mask, 30, 255, THRESH_BINARY);
+            Mat kernel = getStructuringElement(MORPH_RECT, Size(4, 4));
+            Mat ekernel = getStructuringElement(MORPH_RECT, Size(2, 2));
             erode(mask, imgErode, ekernel);
             dilate(mask, imgDilate, kernel);
+            /* morphologyEx(mask, imgErode, MORPH_CLOSE, kernel); */
+            /* morphologyEx(imgErode, imgErode, MORPH_CLOSE, kernel); */
+            /* morphologyEx(imgErode, imgErode, MORPH_OPEN, ekernel); */
+            /* erode(mask, imgErode, ekernel); */
             getContours(imgDilate, mask);
             imshow("Difference", imgDiff);
             imshow("Threshold", mask);
