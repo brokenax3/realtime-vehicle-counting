@@ -81,50 +81,77 @@ int main()
 {
     /* VideoCapture cap("test_video/hd_autobitrate_close_view.mp4"); */
     VideoCapture cap("test_video/low_angle.mp4");
-    Ptr<BackgroundSubtractor> pBacksub;
-    Mat img;
-
-    pBacksub = createBackgroundSubtractorKNN();
+    Mat img, imgNext, imgDiff;
 
     Mat imgGrey, imgBlur, imgCanny, imgDilate, imgBlurBlur, mask, imgErode;
 
     Mat imgWarp;
     Mat imgTemp;
 
+    int firstFrame = 1;
     while(true)
     {
-        cap.read(img);
-
-        if(img.empty())
+        img = imgNext;
+        cap.read(imgNext);
+        cvtColor(imgNext, imgNext, COLOR_BGR2GRAY);
+        resize(imgNext, imgNext, Size(), 0.4, 0.4, INTER_LINEAR);
+        if(firstFrame == 0)
         {
-            cap.set(CAP_PROP_POS_AVI_RATIO, 0);
-            cap.read(img);
+            absdiff(imgNext, img, imgDiff);
+            GaussianBlur(imgDiff, imgDiff, Size(5, 5), 0);
+            threshold(imgDiff, mask, 25, 255, THRESH_BINARY);
+            Mat kernel = getStructuringElement(MORPH_RECT, Size(10, 10));
+            Mat ekernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+            erode(mask, imgErode, ekernel);
+            dilate(mask, imgDilate, kernel);
+            getContours(imgDilate, mask);
+            imshow("Difference", imgDiff);
+            imshow("Threshold", mask);
+            imshow("Dilated", imgDilate);
+            imshow("Eroded", imgErode);
+            waitKey(30);
         }
-        cvtColor(img, imgGrey, COLOR_BGR2GRAY);
-        GaussianBlur(imgGrey, imgBlur, Size(3, 3), 0);
-        pBacksub -> apply(imgBlur, mask);
-
-
-        Mat ekernel = getStructuringElement(MORPH_RECT, Size(5, 5));
-        Mat kernel = getStructuringElement(MORPH_RECT, Size(15, 15));
-        /* erode(mask, imgErode, ekernel); */
-        /* dilate(imgErode, imgDilate, kernel); */
-        /* dilate(imgDilate, imgDilate, kernel); */
-        /* dilate(imgDilate, imgDilate, kernel); */
-        morphologyEx(mask, imgTemp, MORPH_OPEN, ekernel);
-        morphologyEx(imgTemp, imgErode, MORPH_CLOSE, kernel);
-        morphologyEx(imgErode, imgDilate, MORPH_OPEN, kernel);
-
-        getContours(imgDilate, img);
-
-        /* imshow("Test Video", img); */
-        /* imshow("Test Video Blur", imgBlur); */
-        /* /1* imshow("Test Video Cammy", imgCanny); *1/ */
-        /* imshow("Test video", imgDilate); */
-        imshow("Image", img);
-        /* imshow("Mask", mask); */
-        imshow("Mask Erode", imgErode);
-        imshow("Mask Dilate", imgDilate);
-        waitKey(30);
+        else
+        {
+            firstFrame = 0;
+        }
     }
+        
+
+    /* while(true) */
+    /* { */
+    /*     cap.read(img); */
+
+    /*     if(img.empty()) */
+    /*     { */
+    /*         cap.set(CAP_PROP_POS_AVI_RATIO, 0); */
+    /*         cap.read(img); */
+    /*     } */
+    /*     resize(img, img, Size(), 0.2, 0.2, INTER_LINEAR); */
+    /*     cvtColor(img, imgGrey, COLOR_BGR2GRAY); */
+    /*     GaussianBlur(imgGrey, imgBlur, Size(5, 5), 0); */
+    /*     pBacksub -> apply(imgBlur, mask); */
+
+
+    /*     Mat ekernel = getStructuringElement(MORPH_RECT, Size(5, 5)); */
+    /*     /1* erode(mask, imgErode, ekernel); *1/ */
+    /*     /1* dilate(imgErode, imgDilate, kernel); *1/ */
+    /*     /1* dilate(imgDilate, imgDilate, kernel); *1/ */
+    /*     /1* dilate(imgDilate, imgDilate, kernel); *1/ */
+    /*     morphologyEx(mask, imgTemp, MORPH_OPEN, ekernel); */
+    /*     morphologyEx(imgTemp, imgErode, MORPH_CLOSE, kernel); */
+    /*     morphologyEx(imgErode, imgDilate, MORPH_OPEN, kernel); */
+
+    /*     getContours(imgDilate, img); */
+
+    /*     /1* imshow("Test Video", img); *1/ */
+    /*     /1* imshow("Test Video Blur", imgBlur); *1/ */
+    /*     /1* /2* imshow("Test Video Cammy", imgCanny); *2/ *1/ */
+    /*     /1* imshow("Test video", imgDilate); *1/ */
+    /*     imshow("Image", img); */
+    /*     /1* imshow("Mask", mask); *1/ */
+    /*     imshow("Mask Erode", imgErode); */
+    /*     imshow("Mask Dilate", imgDilate); */
+    /*     waitKey(30); */
+    /* } */
 }
