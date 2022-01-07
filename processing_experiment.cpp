@@ -100,19 +100,24 @@ int main()
             cap.set(CAP_PROP_POS_AVI_RATIO, 0);
             cap.read(img);
         }
+        resize(img, img, Size(), 0.4, 0.4, INTER_LINEAR);
         cvtColor(img, imgGrey, COLOR_BGR2GRAY);
         GaussianBlur(imgGrey, imgBlur, Size(3, 3), 0);
         pBacksub -> apply(imgBlur, mask);
 
+        /* threshold(mask, mask, 30, 255, THRESH_BINARY); */
 
+
+        Mat fkernel = getStructuringElement(MORPH_RECT, Size(2, 2));
         Mat ekernel = getStructuringElement(MORPH_RECT, Size(5, 5));
-        Mat kernel = getStructuringElement(MORPH_RECT, Size(15, 15));
-        /* erode(mask, imgErode, ekernel); */
-        /* dilate(imgErode, imgDilate, kernel); */
+        Mat kernel = getStructuringElement(MORPH_RECT, Size(8, 8));
+        erode(mask, mask, fkernel);
+        threshold(mask, mask, 30, 255, THRESH_BINARY);
+        /* dilate(imgErode, imgDilate, fkernel); */
         /* dilate(imgDilate, imgDilate, kernel); */
         /* dilate(imgDilate, imgDilate, kernel); */
-        morphologyEx(mask, imgTemp, MORPH_OPEN, ekernel);
-        morphologyEx(imgTemp, imgErode, MORPH_CLOSE, kernel);
+        /* morphologyEx(mask, imgTemp, MORPH_OPEN, ekernel); */
+        morphologyEx(mask, imgErode, MORPH_CLOSE, kernel);
         morphologyEx(imgErode, imgDilate, MORPH_OPEN, kernel);
 
         getContours(imgDilate, img);
@@ -122,8 +127,8 @@ int main()
         /* /1* imshow("Test Video Cammy", imgCanny); *1/ */
         /* imshow("Test video", imgDilate); */
         imshow("Image", img);
-        /* imshow("Mask", mask); */
-        imshow("Mask Erode", imgErode);
+        imshow("Mask", mask);
+        /* imshow("Mask Erode", imgErode); */
         imshow("Mask Dilate", imgDilate);
         waitKey(30);
     }
