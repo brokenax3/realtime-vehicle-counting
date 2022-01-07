@@ -79,11 +79,8 @@ void getContours(Mat imgInput, Mat img)
 
 int main()
 {
-    int ratio = 3;
-    int lowThreshold = 40;
-
     /* VideoCapture cap("test_video/hd_autobitrate_close_view.mp4"); */
-    VideoCapture cap("test_video/360p_close_view_gphoto.mp4");
+    VideoCapture cap("test_video/low_angle.mp4");
     Ptr<BackgroundSubtractor> pBacksub;
     Mat img;
 
@@ -104,19 +101,19 @@ int main()
             cap.read(img);
         }
         cvtColor(img, imgGrey, COLOR_BGR2GRAY);
-        GaussianBlur(imgGrey, imgBlur, Size(5, 5), 0);
+        GaussianBlur(imgGrey, imgBlur, Size(3, 3), 0);
         pBacksub -> apply(imgBlur, mask);
 
 
         Mat ekernel = getStructuringElement(MORPH_RECT, Size(5, 5));
-        Mat kernel = getStructuringElement(MORPH_RECT, Size(10, 10));
+        Mat kernel = getStructuringElement(MORPH_RECT, Size(15, 15));
         /* erode(mask, imgErode, ekernel); */
         /* dilate(imgErode, imgDilate, kernel); */
         /* dilate(imgDilate, imgDilate, kernel); */
         /* dilate(imgDilate, imgDilate, kernel); */
-        morphologyEx(mask, imgTemp, MORPH_OPEN, kernel);
+        morphologyEx(mask, imgTemp, MORPH_OPEN, ekernel);
         morphologyEx(imgTemp, imgErode, MORPH_CLOSE, kernel);
-        morphologyEx(imgErode, imgDilate, MORPH_OPEN, ekernel);
+        morphologyEx(imgErode, imgDilate, MORPH_OPEN, kernel);
 
         getContours(imgDilate, img);
 
