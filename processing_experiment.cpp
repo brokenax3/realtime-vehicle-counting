@@ -34,9 +34,9 @@ void getContours(Mat imgInput, Mat img)
     {
         int area = contourArea(contour);
         /* cout << area << endl; */
-        if((2000 < area) && (area < 5000))
+        if((1500 < area) && (area < 5000))
         {
-            cout << area << endl;
+            /* cout << area << endl; */
             /* drawContours(img, conPoly, count, Scalar(0, 255, 0), 2); */
 
             boundRect[count] = boundingRect(contour);
@@ -71,14 +71,13 @@ int main()
         if(firstFrame == 0)
         {
             absdiff(imgNext, img, imgDiff);
-            /* medianBlur(imgDiff, imgDiff, 3); */
-            GaussianBlur(imgDiff, imgDiff, Size(3, 3), 0);
+            /* GaussianBlur(imgDiff, imgDiff, Size(5, 5), 0); */
             threshold(imgDiff, mask, 30, 255, THRESH_BINARY);
             Mat kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
             Mat ekernel = getStructuringElement(MORPH_RECT, Size(2, 2));
             erode(mask, imgErode, ekernel);
             dilate(imgErode, imgDilate, kernel);
-            /* morphologyEx(mask, imgErode, MORPH_CLOSE, kernel); */
+            /* morphologyEx(imgErode, imgErode, MORPH_CLOSE, kernel); */
             /* morphologyEx(imgErode, imgErode, MORPH_CLOSE, kernel); */
             /* morphologyEx(imgErode, imgErode, MORPH_OPEN, ekernel); */
             /* erode(mask, imgErode, ekernel); */
