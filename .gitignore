@@ -6,10 +6,14 @@ build
 Debug
 
 # Files for Articles
-pdf
+*.pdf
 
 # Reports
-report
+# report
 
 # Test Footage
 test_video
+
+# Deep Learning Configurations and Weights
+dnn_files
+

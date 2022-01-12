@@ -7,38 +7,13 @@
 using namespace cv;
 using namespace std;
 
-Mat makeSkewImg(Mat imgInput)
-{
-    float w = 200, h = 400;
-    Mat imgWarp;
-
-    Point2f src[4] = {
-        {144,0},
-        {220,0},
-        {9,200},
-        {362,200}
-    };
-
-    Point2f dst[4] = {
-        {0.0f, 0.0f},
-        {w, 0.0f},
-        {0.0f, h},
-        {w, h}
-    };
-    
-    Mat matrix = getPerspectiveTransform(src, dst);
-    warpPerspective(imgInput, imgWarp, matrix, Point(w, h));
-    /* imshow("Warp", imgWarp); */
-    return imgWarp;
-}
-
 void getContours(Mat imgInput, Mat img)
 {
 
     vector<vector<Point>> contours;
 
     findContours(imgInput, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-    /* vector<Rect> boundRect(contours.size()); */
+    vector<Rect> boundRect(contours.size());
     vector<vector<Point>> hull(contours.size());
     Mat drawing = Mat::zeros(imgInput.size(), CV_8UC3);
     for( size_t i = 0; i < contours.size(); i++ )
@@ -49,57 +24,76 @@ void getContours(Mat imgInput, Mat img)
     for(int i = 0; i < contours.size(); i++)
     {
         Scalar color = Scalar(255, 0, 0);
-        /* fillPoly(drawing, pts=[contours], color); */
-        /* drawContours(drawing, contours, i, color); */
         drawContours(drawing, hull, i, color);
     }
 
     imshow("Drawing", drawing);
 
+    int count = 0;
+    for(vector<Point> contour : contours)
+    {
+        int area = contourArea(contour);
+        /* cout << area << endl; */
+        if((1500 < area) && (area < 5000))
+        {
+            /* cout << area << endl; */
+            /* drawContours(img, conPoly, count, Scalar(0, 255, 0), 2); */
 
-    /* for(vector<Point> contour : contours) */
-    /* { */
-    /*     int area = contourArea(contour); */
-    /*     /1* cout << area << endl; *1/ */
-    /*     if((1500 < area) && (area < 5000)) */
-    /*     { */
-    /*         cout << area << endl; */
-    /*         /1* drawContours(img, conPoly, count, Scalar(0, 255, 0), 2); *1/ */
+            boundRect[count] = boundingRect(contour);
 
-    /*         boundRect[count] = boundingRect(contour); */
-    /*         if(boundRect[count].area() >= 2000) */
-
-    /*         rectangle(img, boundRect[count].tl(), boundRect[count].br(), Scalar(255, 0, 0), 5); */
-    /*         cout << boundRect[count].tl() << endl; */
-    /*         cout << boundRect[count].br() << endl; */
-    /*     } */
-    /*     count++; */
-    /* } */
+            rectangle(img, boundRect[count].tl(), boundRect[count].br(), Scalar(255, 0, 0), 5);
+            /* cout << boundRect[count].tl() << endl; */
+            /* cout << boundRect[count].br() << endl; */
+        }
+        count++;
+    }
 }
 
 int main()
 {
     /* VideoCapture cap("test_video/hd_autobitrate_close_view.mp4"); */
     VideoCapture cap("test_video/low_angle.mp4");
-    Ptr<BackgroundSubtractor> pBacksub;
-    Mat img;
-
-    pBacksub = createBackgroundSubtractorKNN();
+    Mat img, imgNext, imgDiff, imgOriginal;
 
     Mat imgGrey, imgBlur, imgCanny, imgDilate, imgBlurBlur, mask, imgErode;
 
     Mat imgWarp;
     Mat imgTemp;
 
+    int firstFrame = 1;
     while(true)
     {
-        cap.read(img);
-
-        if(img.empty())
+        img = imgNext;
+        cap.read(imgOriginal);
+        resize(imgOriginal, imgOriginal, Size(), 0.5, 0.5, INTER_LINEAR);
+        imgNext = imgOriginal;
+        cvtColor(imgNext, imgNext, COLOR_BGR2GRAY);
+        if(firstFrame == 0)
         {
-            cap.set(CAP_PROP_POS_AVI_RATIO, 0);
-            cap.read(img);
+            absdiff(imgNext, img, imgDiff);
+            /* GaussianBlur(imgDiff, imgDiff, Size(5, 5), 0); */
+            threshold(imgDiff, mask, 30, 255, THRESH_BINARY);
+            Mat kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+            Mat ekernel = getStructuringElement(MORPH_RECT, Size(2, 2));
+            erode(mask, imgErode, ekernel);
+            dilate(imgErode, imgDilate, kernel);
+            /* morphologyEx(imgErode, imgErode, MORPH_CLOSE, kernel); */
+            /* morphologyEx(imgErode, imgErode, MORPH_CLOSE, kernel); */
+            /* morphologyEx(imgErode, imgErode, MORPH_OPEN, ekernel); */
+            /* erode(mask, imgErode, ekernel); */
+            getContours(imgDilate, imgOriginal);
+            imshow("Difference", imgDiff);
+            imshow("Threshold", mask);
+            imshow("Dilated", imgDilate);
+            imshow("Eroded", imgErode);
+            imshow("Detection Image", imgOriginal);
+            waitKey(30);
         }
+        else
+        {
+            firstFrame = 0;
+        }
+<<<<<<< HEAD
         resize(img, img, Size(), 0.4, 0.4, INTER_LINEAR);
         cvtColor(img, imgGrey, COLOR_BGR2GRAY);
         GaussianBlur(imgGrey, imgBlur, Size(3, 3), 0);
@@ -131,5 +125,7 @@ int main()
         /* imshow("Mask Erode", imgErode); */
         imshow("Mask Dilate", imgDilate);
         waitKey(30);
+=======
+>>>>>>> test
     }
 }
