@@ -1,53 +1,7 @@
 #include "dnn_processing.h"
 
-std::vector<std::string> classes;
-float confThreshold = 0.7;
-float nmsThreshold = 0.4;
-
-std::vector<cv::Rect> dnnProcess(cv::Mat &frame)
-{
-    int initialConf = (int)(confThreshold * 100);
-    float scale = 0.003925;
-    int inpWidth = 416;
-    int inpHeight = 416;
-    std::string modelPath = "./dnn_files/yolov4-mish-416.weights";
-    std::string configPath = "./dnn_files/yolov4-mish-416.cfg";
-
-    // Unpack Class Names
-    std::string classPath = "./dnn_files/coco_classes.txt";
-    std::ifstream ifs(classPath.c_str());
-    std::string line;
-
-    while(std::getline(ifs, line))
-    {
-        classes.push_back(line);
-    }
-     
-    // Load a model.
-    cv::dnn::Net net = cv::dnn::readNet(modelPath, configPath);
-
-    // CUDA for Processing
-    int backend = 5;
-    int target = 6;
-    net.setPreferableBackend(backend);
-    net.setPreferableTarget(target);
-    std::vector<cv::String> outNames = net.getUnconnectedOutLayersNames();
-    preprocess(frame, net, cv::Size(inpWidth, inpHeight), scale);
-
-    std::vector<cv::Mat> outs;
-    net.forward(outs, outNames);
-
-    std::vector<cv::Rect> rectangles = postprocess(frame, outs, net, backend);
-    // Put efficiency information.
-    std::vector<double> layersTimes;
-    double freq = cv::getTickFrequency() / 1000;
-    double t = net.getPerfProfile(layersTimes) / freq;
-    std::string label = cv::format("Inference time: %.2f ms", t);
-    cv::putText(frame, label, cv::Point(0, 15), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0));
-    /* cv::putText(frame, std::to_string(count), cv::Point(0, 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255)); */
-
-    return rectangles;
-}
+extern float confThreshold;
+extern float nmsThreshold;
 
 void preprocess(const cv::Mat& frame, cv::dnn::Net& net, cv::Size inpSize, float scale)
 {
