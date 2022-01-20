@@ -1,10 +1,12 @@
 #include <string>
 
+#ifndef __OBJECT_H__
+#define __OBJECT_H__
 class Centroid
 {
     public:
-        int x;
-        int y;
+        float x;
+        float y;
 };
 
 class Object
@@ -12,6 +14,12 @@ class Object
     public:
         int id;
         Centroid centroid;
+        float x_coord;
+        float y_coord;
+        float width;
+        float height;
+
         int disappear_count;
         std::string getCentroid();
 };
+#endif

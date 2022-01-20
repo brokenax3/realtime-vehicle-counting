@@ -5,6 +5,9 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
+#include "tracking.cpp"
+
+
 #if defined(CV_CXX11) && defined(HAVE_THREADS)
 #define USE_THREADS 1
 #endif
@@ -112,6 +115,8 @@ private:
 };
 #endif  // USE_THREADS
 
+CentroidTracker centroidTracker;
+
 int main(int argc, char** argv)
 {
     CommandLineParser parser(argc, argv, keys);
@@ -165,11 +170,13 @@ int main(int argc, char** argv)
     // Create a window
     static const std::string kWinName = "Deep learning object detection in OpenCV";
     namedWindow(kWinName, WINDOW_NORMAL);
+    namedWindow("test", WINDOW_NORMAL);
     int initialConf = (int)(confThreshold * 100);
     createTrackbar("Confidence threshold, %", kWinName, &initialConf, 99, callback);
 
     // Open a video file or an image file or a camera stream.
     VideoCapture cap;
+
     if (parser.has("input"))
         cap.open(parser.get<String>("input"));
     else
@@ -269,6 +276,7 @@ int main(int argc, char** argv)
             putText(frame, label, Point(0, 45), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0));
         }
         imshow(kWinName, frame);
+        /* imshow("Test", cleanFrame); */
     }
 
     process = false;
@@ -281,9 +289,12 @@ int main(int argc, char** argv)
 
     // Process frames.
     Mat frame, blob;
+    /* Mat cleanFrame; */
     while (true)
     {
         cap >> frame;
+        /* cleanFrame = frame; */
+        
         if (frame.empty())
         {
             waitKey();
@@ -305,6 +316,7 @@ int main(int argc, char** argv)
         putText(frame, label, Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0));
 
         imshow(kWinName, frame);
+        /* imshow("Test", cleanFrame); */
         waitKey(30);
     }
 #endif  // USE_THREADS
@@ -338,6 +350,7 @@ void postprocess(Mat& frame, const std::vector<Mat>& outs, Net& net, int backend
     std::vector<int> classIds;
     std::vector<float> confidences;
     std::vector<Rect> boxes;
+
     if (outLayerType == "DetectionOutput")
     {
         // Network produces output blob with a shape 1x1xNx7 where N is a number of
@@ -447,17 +460,26 @@ void postprocess(Mat& frame, const std::vector<Mat>& outs, Net& net, int backend
         confidences = nmsConfidences;
     }
 
+
+    Mat &testframe = frame;
+    centroidTracker.updateObjects(boxes);
     for (size_t idx = 0; idx < boxes.size(); ++idx)
     {
         Rect box = boxes[idx];
         drawPred(classIds[idx], confidences[idx], box.x, box.y,
                  box.x + box.width, box.y + box.height, frame);
+        Object object = centroidTracker.objects[idx];
+        putText(testframe, std::to_string(object.id), Point(box.x + box.width / 2, box.y + box.height / 2), FONT_HERSHEY_PLAIN, 1.5, Scalar(0, 255, 0), 2);
     }
+
+
+    imshow("test", testframe);
 }
 
 void drawPred(int classId, float conf, int left, int top, int right, int bottom, Mat& frame)
 {
     rectangle(frame, Point(left, top), Point(right, bottom), Scalar(0, 255, 0));
+    std::cout << boost::format("[[DRAWING]] x, y : %1%, %2%") % left % top << std::endl;
 
     std::string label = format("%.2f", conf);
     if (!classes.empty())

@@ -1,8 +1,10 @@
 #include <string>
-#include "helper.cpp"
+#include <boost/format.hpp>
 #include "objects.h"
 
 std::string Object::getCentroid()
 {
-    return string_format("%s %s", centroid.x, centroid.y); 
+    std::string output = boost::str(boost::format("(%1%, %2%)") % this->centroid.x % this->centroid.y);
+
+    return output;
 }

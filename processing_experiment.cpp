@@ -93,7 +93,6 @@ int main()
         {
             firstFrame = 0;
         }
-<<<<<<< HEAD
         resize(img, img, Size(), 0.4, 0.4, INTER_LINEAR);
         cvtColor(img, imgGrey, COLOR_BGR2GRAY);
         GaussianBlur(imgGrey, imgBlur, Size(3, 3), 0);
@@ -125,7 +124,5 @@ int main()
         /* imshow("Mask Erode", imgErode); */
         imshow("Mask Dilate", imgDilate);
         waitKey(30);
-=======
->>>>>>> test
     }
 }
