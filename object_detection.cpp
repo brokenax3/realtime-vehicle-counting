@@ -6,8 +6,6 @@
 #include <opencv2/highgui.hpp>
 
 #include "tracking.cpp"
-
-
 #if defined(CV_CXX11) && defined(HAVE_THREADS)
 #define USE_THREADS 1
 #endif
@@ -119,6 +117,7 @@ CentroidTracker centroidTracker;
 
 int main(int argc, char** argv)
 {
+
     CommandLineParser parser(argc, argv, keys);
 
     const std::string modelName = parser.get<String>("@alias");
@@ -460,9 +459,9 @@ void postprocess(Mat& frame, const std::vector<Mat>& outs, Net& net, int backend
         confidences = nmsConfidences;
     }
 
+    centroidTracker.updateObjects(boxes);
 
     Mat &testframe = frame;
-    centroidTracker.updateObjects(boxes);
     for (size_t idx = 0; idx < boxes.size(); ++idx)
     {
         Rect box = boxes[idx];

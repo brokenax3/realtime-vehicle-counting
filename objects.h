@@ -12,14 +12,14 @@ class Centroid
 class Object
 {
     public:
-        int id;
+        long id;
         Centroid centroid;
         float x_coord;
         float y_coord;
         float width;
         float height;
 
-        int disappear_count;
+        int disappear_count = 0;
         std::string getCentroid();
 };
 #endif
