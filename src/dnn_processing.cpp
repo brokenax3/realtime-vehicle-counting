@@ -1,7 +1,11 @@
 #include "dnn_processing.h"
 
-extern float confThreshold;
-extern float nmsThreshold;
+#ifndef __CONSTANT_H__
+#include "constants.h"
+#endif
+
+/* extern float confThreshold; */
+/* extern float nmsThreshold; */
 
 void preprocess(const cv::Mat& frame, cv::dnn::Net& net, cv::Size inpSize, float scale)
 {

@@ -4,20 +4,20 @@
 #include <opencv2/tracking.hpp>
 /* #include <opencv2/tracking/tracking_legacy.hpp> */
 
+#ifndef __CONSTANT_H__
+#include "constants.h"
+#endif
+
 #include "dnn_processing.h"
 #include "tracking.h"
 
-float confThreshold = 0.3;
-float nmsThreshold = 0.4;
+
 std::vector<std::string> classes;
 
 int main()
 {
     // Initial Variables
     int initialConf = (int)(confThreshold * 100);
-    float scale = 0.003925;
-    int inpWidth = 416;
-    int inpHeight = 416;
     std::string modelPath = "./dnn_files/yolov4-tiny.weights";
     std::string configPath = "./dnn_files/yolov4-tiny.cfg";
 
@@ -35,8 +35,6 @@ int main()
     cv::dnn::Net net = cv::dnn::readNet(modelPath, configPath);
 
     // CUDA for Processing
-    int backend = 0;
-    int target = 0;
     net.setPreferableBackend(backend);
     net.setPreferableTarget(target);
     std::vector<cv::String> outNames = net.getUnconnectedOutLayersNames();
