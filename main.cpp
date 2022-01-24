@@ -1,15 +1,19 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <stdlib.h>
+#include <opencv2/tracking.hpp>
+/* #include <opencv2/tracking/tracking_legacy.hpp> */
 
 #include "dnn_processing.h"
+#include "tracking.h"
 
-float confThreshold = 0.5;
+float confThreshold = 0.8;
 float nmsThreshold = 0.4;
 std::vector<std::string> classes;
 
 int main()
 {
+    // Initial Variables
     int initialConf = (int)(confThreshold * 100);
     float scale = 0.003925;
     int inpWidth = 416;
@@ -37,7 +41,6 @@ int main()
     net.setPreferableTarget(target);
     std::vector<cv::String> outNames = net.getUnconnectedOutLayersNames();
 
-
     // Create a window
     static const std::string kWinName = "Deep learning object detection in OpenCV";
     /* static const std::string detectionWinName = "Detection Window"; */
@@ -50,30 +53,41 @@ int main()
     cap.open("./test_video/low_angle.mp4");
 
     // Process frames.
-    cv::Mat frame, blob;
-    int count = 0;
-
+    cv::Mat frame, roi;
+    
+    CentroidTracker centroidTracker; 
     // Output of Neural Network
     std::vector<cv::Rect> rectangles;
+    int count = 0;
     while (true)
     {
         cap >> frame;
+        /* roi = frame(cv::Range(150, 300), cv::Range(600, 1016)); */
         
-        if (frame.empty())
-        {
-            cv::waitKey();
-            break;
-        }
+        /* if (frame.empty()) */
+        /* { */
+        /*     cv::waitKey(); */
+        /*     break; */
+        /* } */
+        /* std::cout << count << std::endl; */
+        // Detection
         preprocess(frame, net, cv::Size(inpWidth, inpHeight), scale);
 
         std::vector<cv::Mat> outs;
         net.forward(outs, outNames);
 
-        std::vector<cv::Rect> rectangles = postprocess(frame, outs, net, backend);
+        rectangles = postprocess(frame, outs, net, backend);
 
+        centroidTracker.updateObjects(rectangles);
+        
         for(cv::Rect rectangle : rectangles)
         {
-            cv::rectangle(frame, rectangle, cv::Scalar(0, 0, 255), 2);
+            cv::rectangle(frame, rectangle, cv::Scalar(255, 0, 0), 2);
+        }
+
+        for(Object object : centroidTracker.objects)
+        {
+            putText(frame, std::to_string(object.id), cv::Point(object.centroid.x, object.centroid.y), cv::FONT_HERSHEY_PLAIN, 1.5, cv::Scalar(0, 255, 0), 2);
         }
 
         // Put efficiency information.
@@ -82,6 +96,7 @@ int main()
         double t = net.getPerfProfile(layersTimes) / freq;
         std::string label = cv::format("Inference time: %.2f ms", t);
         cv::putText(frame, label, cv::Point(0, 15), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0));
+
         imshow(kWinName, frame);
         cv::waitKey(30);
     }

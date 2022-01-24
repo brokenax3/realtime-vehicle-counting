@@ -1,14 +1,7 @@
-#include <memory>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <vector>
-#include <numeric>
-#include <algorithm>
-#include <math.h>
-#include <boost/format.hpp>
-
 #include "objects.h"
+#include "helper.h"
+
+bool test(Centroid a, Centroid b){ return (find_distance(a.x, a.y, 0, 0) < find_distance(b.x, b.y, 0, 0));}
 
 float find_distance(float x1, float y1, float x2, float y2)
 {
@@ -17,6 +10,25 @@ float find_distance(float x1, float y1, float x2, float y2)
     return ans;
 }
 
+std::vector<Centroid> filter_centroids(std::vector<Centroid> centroidsInput)
+{
+    std::cout << "Old Value" << std::endl;
+    for(Centroid centroid : centroidsInput)
+    {
+        std::cout << boost::format("x, y : %1%, %2%") % centroid.x % centroid.y << std::endl;
+    }
+    std::sort(centroidsInput.begin(), centroidsInput.end(), test);
+    std::cout << "New Value" << std::endl;
+    for(Centroid centroid : centroidsInput)
+    {
+        std::cout << boost::format("x, y : %1%, %2%") % centroid.x % centroid.y << std::endl;
+    }
+    /* for(int i = 0; i < centroidsInput.size() - 1; i++) */
+    /* { */
+    /*     float difference = find_distance(centroidsInput[i].x, centroidsInput[i].y, centroidsInput[i + 1].x, centroidsInput[i + 1].y); */
+    
+    return centroidsInput;
+}
 std::tuple<std::vector<std::tuple<int, Centroid>>, std::vector<Centroid>> find_centroid_pairs(std::vector<Object> objectInput, std::vector<Centroid> centroidsInput)
 {
     /* std::cout << "Iteration START" << std::endl; */
@@ -29,6 +41,8 @@ std::tuple<std::vector<std::tuple<int, Centroid>>, std::vector<Centroid>> find_c
         input = 0;
     }
 
+    /* centroidsInput = filter_centroids(centroidsInput); */
+
     // Find pairs which satisfy the given condition
     for(int i = 0; i < objectInput.size(); i++)
     {
@@ -39,10 +53,13 @@ std::tuple<std::vector<std::tuple<int, Centroid>>, std::vector<Centroid>> find_c
         {
             tempDist.push_back(find_distance(centIn.x, centIn.y, objectInput[i].centroid.x, objectInput[i].centroid.y));
         }
+
         float minimum = *min_element(tempDist.begin(), tempDist.end());
+        std::vector<float> temptempDist;
+        float secminimum = *min_element(tempDist.begin(), tempDist.end());
         /* std::cout << minimum << std::endl; */
 
-        if(minimum < 5)
+        if(minimum < 25)
         {
             auto it = find(tempDist.begin(), tempDist.end(), minimum);
             if(it != tempDist.end())
@@ -53,45 +70,7 @@ std::tuple<std::vector<std::tuple<int, Centroid>>, std::vector<Centroid>> find_c
                 assignedInput[index]++;
             }
         }
-
-        /* std::cout << "Index Assigned Pairs:" << std::endl; */
-        /* for(int item : assignedInput) */
-        /* { */
-        /*     std::cout << item << std::endl; */
-        /* } */
     }
-
-    // Check for duplicates
-    /* std::sort(assignedPairs.begin(), assignedPairs.end()); */
-    /* assignedPairs.erase( unique( assignedPairs.begin(), assignedPairs.end() ), assignedPairs.end() ); */
-    /* std::cout << "Input Size :" << centroidsInput.size() << std::endl; */
-    /* for(int item : assignedPairs) */
-    /* { */
-    /*     std::cout << item << std::endl; */
-    /* } */
-
-    // Find unused new centroids
-    /* std::vector<int> newCentroidIdx; */
-    /* std::vector<int> inputRange(centroidsInput.size()); */
-    /* std::iota(inputRange.begin(), inputRange.end(), 0); */
-    /* std::set_difference( */
-    /*     inputRange.begin(), */ 
-    /*     inputRange.end(), */ 
-    /*     assignedPairs.begin(), */ 
-    /*     assignedPairs.end(), */ 
-    /*     std::back_inserter(newCentroidIdx) */
-    /* ); */
-
-    /* std::cout << "New Centroids :" << newCentroidIdx.size() << std::endl; */
-    /* if(newCentroidIdx.empty() == 0) */
-    /* { */
-    /*     for(int idx : newCentroidIdx) */
-    /*     { */
-    /*         std::cout << idx << std::endl; */
-    /*         newCentroid.push_back(centroidsInput.at(idx)); */
-    /*     } */
-    /*     std::cout << "Iteration END" << std::endl; */
-    /* } */
 
     for(int i; i < assignedInput.size(); i++)
     {
@@ -100,6 +79,8 @@ std::tuple<std::vector<std::tuple<int, Centroid>>, std::vector<Centroid>> find_c
             newCentroid.push_back(centroidsInput.at(i));
         }
     }
+    
+    /* newCentroid = filter_centroids(newCentroid); */
 
     return {distancePair, newCentroid};
 }

@@ -3,7 +3,9 @@
 #include <vector>
 #include <iostream>
 
-#include "objects.cpp"
+#ifndef __OBJECT_H__
+#include "objects.h"
+#endif
 
 class CentroidTracker
 {
@@ -15,5 +17,3 @@ class CentroidTracker
         void unregisterObject(int id);
         void updateObjects(std::vector<cv::Rect> rectangles);
 };
-
-

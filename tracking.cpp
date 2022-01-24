@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "tracking.h"
-#include "helper.cpp"
+#include "helper.h"
 
 void CentroidTracker::registerObject(Centroid centroid)
 {
@@ -40,20 +40,20 @@ void CentroidTracker::updateObjects(std::vector<cv::Rect> rectangles)
 {
     /* std::cout << "NUMBER OF RECTANGLES : " << rectangles.size() << std::endl; */
     // Register all rectangles as there are no objects
-    if(this->objects.size() == 0)
-    {
-        for(cv::Rect rectangle : rectangles)
-        {
-            Centroid centroid;
+    /* if(this->objects.size() == 0) */
+    /* { */
+    /*     for(cv::Rect rectangle : rectangles) */
+    /*     { */
+    /*         Centroid centroid; */
 
-            centroid.x = rectangle.x + (rectangle.width / 2);
-            centroid.y = rectangle.y + (rectangle.height / 2);
+    /*         centroid.x = rectangle.x + (rectangle.width / 2); */
+    /*         centroid.y = rectangle.y + (rectangle.height / 2); */
 
-            this->registerObject(centroid);
-            /* std::cout << "work here"; */
-        }
-        return;
-    }
+    /*         this->registerObject(centroid); */
+    /*         /1* std::cout << "work here"; *1/ */
+    /*     } */
+    /*     return; */
+    /* } */
     // Increment disappear counter for all objects
     if(rectangles.size() == 0)
     {
@@ -84,22 +84,12 @@ void CentroidTracker::updateObjects(std::vector<cv::Rect> rectangles)
             nCentroids.push_back(nCentroid);
         }
 
-        // Unpack old centroid values
-        /* std::vector<Centroid> oCentroids; */
-        /* for(Object object : this->objects) */
-        /* { */
-        /*     std::cout << boost::format("Old Centroids %1%") % object.getCentroid() << std::endl; */
-        /*     oCentroids.push_back(object.centroid); */
-        /* } */
-
         // Find the closest distance between each centroid pairs
         std::tuple<std::vector<std::tuple<int, Centroid>>, std::vector<Centroid>> expTuple;
         std::vector<std::tuple<int, Centroid>> foundPairs;
         std::vector<Centroid> newCentroid;
         std::vector<int> updatedIdx;
         std::tie(foundPairs, newCentroid) = find_centroid_pairs(this->objects, nCentroids);
-
-        /* expTuple = find_centroid_pairs(oCentroids, nCentroids); */
 
         // Update centroid location and
         // Increment Lost Counter
@@ -123,7 +113,7 @@ void CentroidTracker::updateObjects(std::vector<cv::Rect> rectangles)
             {
                 std::cout << this->objects[i].id << " have dissapeared " << this->objects[i].disappear_count << std::endl;
                 this->objects[i].disappear_count++;
-                if(this->objects[i].disappear_count > 20)
+                if(this->objects[i].disappear_count > 3)
                 {
                     unregisterID.push_back(this->objects[i].id);
                 }
