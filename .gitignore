@@ -17,3 +17,6 @@ test_video
 # Deep Learning Configurations and Weights
 dnn_files
 
+# Python Cache Files
+*/__pycache__
+
