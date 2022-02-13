@@ -6,10 +6,11 @@ Running with CUDA would need an Nvidia GPU. The OpenCV backend and default targe
 
 ## Building
 ```
+cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
 ## Running
 ```
-./build/out
+./build/realtime-counting
 ```
