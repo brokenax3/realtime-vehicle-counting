@@ -1,3 +1,5 @@
+#ifndef __DETECTOR_H__
+#define __DETECTOR_H__
 #include <string>
 #include <vector>
 #include <iostream>
@@ -7,14 +9,20 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
+#include "utils.h"
+
 using namespace std;
-using namespace cv;
+using cv::Mat;
+using cv::Scalar;
+using cv::Size;
+using cv::Rect;
 
 struct PadInfo
 {
     float scale;
     int top;
     int left;
+    int bottom;
 };
 
 struct Detection
@@ -64,8 +72,11 @@ class Detector
 {
     public:
         Detector(Config &config);
+        ~Detector() = default;
         Detection detect(Mat &img);
-        void postProcess(Mat &img, Detection &detection, Colors&cl);
+        // void postProcess(Mat &img, Detection &detection, Colors&cl);
+        std::vector<Rect> postProcess(Mat &img, Detection &detection, Colors &cl);
+        vector<Rect> makeBoxes(Mat &img, Detection &detection);
         PadInfo letterbox(Mat &img, Size new_shape, Scalar color, bool _auto, bool scaleFill, bool scaleup, int stride);
 
     private:
@@ -77,3 +88,4 @@ class Detector
         cv::dnn::Net model;
         void drawPrediction(Mat &img, vector<Rect> &boxes, vector<float> &sc, vector<int> &clsIndexs, vector<int> &ind, Colors&cl);
 };
+#endif

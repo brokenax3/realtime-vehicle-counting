@@ -9,9 +9,9 @@ Detector::Detector(Config &config)
     while (getline(ifs, line))
         this->classNames.push_back(line);
     ifs.close();
-    this->model = dnn::readNetFromONNX(config.weightPath);
-    this->model.setPreferableBackend(dnn::DNN_BACKEND_OPENCV);
-    this->model.setPreferableTarget(dnn::DNN_TARGET_CPU);
+    this->model = cv::dnn::readNetFromONNX(config.weightPath);
+    this->model.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
+    this->model.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA);
     this->inSize = config.size;
     this->_auto = config._auto;
 }
@@ -34,13 +34,13 @@ PadInfo Detector::letterbox(Mat &img, Size new_shape, Scalar color, bool _auto, 
     }
     dw /= 2, dh /= 2;
     Mat dst;
-    resize(img, img, Size(new_unpadW, new_unpadH), 0, 0, INTER_LINEAR);
+    resize(img, img, Size(new_unpadW, new_unpadH), 0, 0, cv::INTER_LINEAR);
     int top = int(round(dh - 0.1));
     int bottom = int(round(dh + 0.1));
     int left = int(round(dw - 0.1));
     int right = int(round(dw + 0.1));
-    copyMakeBorder(img, img, top, bottom, left, right, BORDER_CONSTANT, color);
-    return {r, top, left};
+    copyMakeBorder(img, img, top, bottom, left, right, cv::BORDER_CONSTANT, color);
+    return {r, top, left, bottom};
 }
 
 Detection Detector::detect(Mat &img)
@@ -52,7 +52,7 @@ Detection Detector::detect(Mat &img)
     img.copyTo(im);
     PadInfo padInfo = letterbox(im, this->inSize, Scalar(114, 114, 114), this->_auto, false, true, 32);
     Mat blob;
-    dnn::blobFromImage(im, blob, 1 / 255.0f, Size(im.cols, im.rows), Scalar(0, 0, 0), true, false);
+    cv::dnn::blobFromImage(im, blob, 1 / 255.0f, Size(im.cols, im.rows), Scalar(0, 0, 0), true, false);
     std::vector<string> outLayerNames = this->model.getUnconnectedOutLayersNames();
     std::vector<Mat> outs;
     this->model.setInput(blob);
@@ -64,13 +64,14 @@ Detection Detector::detect(Mat &img)
 
     return {padInfo, outs, t};
 }
-void Detector::postProcess(Mat &img, Detection &detection, Colors &cl)
+std::vector<Rect> Detector::postProcess(Mat &img, Detection &detection, Colors &cl)
 {
 
-    PadInfo padInfo = letterbox(img, this->inSize, Scalar(114, 114, 114), this->_auto, false, true, 32);
+    letterbox(img, this->inSize, Scalar(114, 114, 114), this->_auto, false, true, 32);
     std::vector<Mat> outs = detection.detection;
     Mat out(outs[0].size[1], outs[0].size[2], CV_32F, outs[0].ptr<float>());
     std::vector<Rect> boxes;
+    std::vector<Rect> boxesOut;
     std::vector<float> scores;
     std::vector<int> indices;
     std::vector<int> classIndexList;
@@ -84,23 +85,34 @@ void Detector::postProcess(Mat &img, Detection &detection, Colors &cl)
         Mat confs = out.row(r).colRange(5, 85);
         confs *= sc;
         double minV, maxV;
-        Point minI, maxI;
+        cv::Point minI, maxI;
+        // if(Rect(cx - w / 2, cy - h / 2, w, h).area() > boxMaxArea)
+        // {
+        //     if(Rect(cx - w / 2, cy - h / 2, w, h).area() > boxMaxArea + 400000)
+        //     {
+        //         std::cout << "Area : " << to_string(Rect(cx - w / 2, cy - h / 2, w, h).area()) << std::endl;
+        //     }
+        //     continue;
+        // }
+        boxes.push_back(Rect(cx - w / 2, cy - h / 2, w, h));
         minMaxLoc(confs, &minV, &maxV, &minI, &maxI);
         scores.push_back(maxV);
-        boxes.push_back(Rect(cx - w / 2, cy - h / 2, w, h));
         indices.push_back(r);
         classIndexList.push_back(maxI.x);
     }
 
-    dnn::NMSBoxes(boxes, scores, this->confThreshold, this->nmsThreshold, indices);
+    cv::dnn::NMSBoxes(boxes, scores, this->confThreshold, this->nmsThreshold, indices);
     std::vector<int> clsIndexs;
     for (long unsigned int i = 0; i < indices.size(); i++)
     {
         clsIndexs.push_back(classIndexList[indices[i]]);
+        boxesOut.push_back(boxes[indices[i]]);
     }
     drawPrediction(img, boxes, scores, clsIndexs, indices, cl);
-    std::string label = format("Inference time : %.2f ms", detection.inference);
-    putText(img, label, Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0), 1);
+    std::string label = cv::format("Inference time : %.2f ms", detection.inference);
+    putText(img, label, cv::Point(0, 15), cv::FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0), 1);
+
+    return boxesOut;
 }
 
 void Detector::drawPrediction(Mat &img, std::vector<Rect> &boxes, std::vector<float> &scores, std::vector<int> &clsIndexs, std::vector<int> &ind, Colors &cl)
@@ -118,9 +130,44 @@ void Detector::drawPrediction(Mat &img, std::vector<Rect> &boxes, std::vector<fl
         string label = name + " " + s_text;
 
         int baseLine = 0;
-        Size textSize = getTextSize(label, FONT_HERSHEY_PLAIN, 0.7, 1, &baseLine);
+        Size textSize = getTextSize(label, cv::FONT_HERSHEY_PLAIN, 0.7, 1, &baseLine);
         baseLine += 2;
         rectangle(img, Rect(rect.x, rect.y - textSize.height, textSize.width + 1, textSize.height + 1), color, -1);
-        putText(img, label, Point(rect.x, rect.y), FONT_HERSHEY_PLAIN, 0.7, Scalar(255, 255, 255), 1);
+        putText(img, label, cv::Point(rect.x, rect.y), cv::FONT_HERSHEY_PLAIN, 0.7, Scalar(255, 255, 255), 1);
     }
+}
+
+vector<Rect> Detector::makeBoxes(Mat &img, Detection &detection)
+{
+    letterbox(img, this->inSize, Scalar(114, 114, 114), this->_auto, false, true, 32);
+    vector<Rect> boxesOut;
+    std::vector<Mat> outs = detection.detection;
+    Mat out(outs[0].size[1], outs[0].size[2], CV_32F, outs[0].ptr<float>());
+    std::vector<Rect> boxes;
+    std::vector<float> scores;
+    std::vector<int> indices;
+    std::vector<int> classIndexList;
+    for (int r = 0; r < out.rows; r++)
+    {
+        float cx = out.at<float>(r, 0);
+        float cy = out.at<float>(r, 1);
+        float w = out.at<float>(r, 2);
+        float h = out.at<float>(r, 3);
+        float sc = out.at<float>(r, 4);
+        Mat confs = out.row(r).colRange(5, 85);
+        confs *= sc;
+        double minV, maxV;
+        cv::Point minI, maxI;
+        minMaxLoc(confs, &minV, &maxV, &minI, &maxI);
+        scores.push_back(maxV);
+        boxes.push_back(Rect(cx - w / 2, cy - h / 2, w, h));
+        indices.push_back(r);
+    }
+
+    cv::dnn::NMSBoxes(boxes, scores, this->confThreshold, this->nmsThreshold, indices);
+    for (long unsigned int i = 0; i < indices.size(); i++)
+    {
+        boxesOut.push_back(boxes[indices[i]]);
+    }
+    return boxesOut;
 }
