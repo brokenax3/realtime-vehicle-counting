@@ -28,7 +28,8 @@ int main()
     // Open a video file or an image file or a camera stream.
     cv::VideoCapture cap;
 
-    cap.open("./test_video/test_video.mp4");
+    // cap.open("./test_video/test_video.mp4");
+    cap.open("./test_video/low_light.mp4");
 
     // Process frames.
     cv::Mat frame, tmpFrame;

@@ -10,8 +10,8 @@ Detector::Detector(Config &config)
         this->classNames.push_back(line);
     ifs.close();
     this->model = cv::dnn::readNetFromONNX(config.weightPath);
-    this->model.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
-    this->model.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA);
+    this->model.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+    this->model.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     this->inSize = config.size;
     this->_auto = config._auto;
 }
