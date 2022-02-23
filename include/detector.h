@@ -66,6 +66,7 @@ struct Config
     string classNamePath;
     Size size;
     bool _auto;
+    bool night;
 };
 
 class Detector
@@ -78,12 +79,16 @@ class Detector
         std::vector<Rect> postProcess(Mat &img, Detection &detection, Colors &cl);
         vector<Rect> makeBoxes(Mat &img, Detection &detection);
         PadInfo letterbox(Mat &img, Size new_shape, Scalar color, bool _auto, bool scaleFill, bool scaleup, int stride);
+        void setNight(bool night);
+        vector<Rect> detectNight(Mat &img);
+        void preprocessNight(Mat &img);
 
     private:
         float nmsThreshold;
         float confThreshold;
         Size inSize;
         bool _auto;
+        bool night;
         vector<string> classNames;
         cv::dnn::Net model;
         void drawPrediction(Mat &img, vector<Rect> &boxes, vector<float> &sc, vector<int> &clsIndexs, vector<int> &ind, Colors&cl);

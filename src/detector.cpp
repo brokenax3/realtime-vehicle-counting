@@ -14,6 +14,7 @@ Detector::Detector(Config &config)
     this->model.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     this->inSize = config.size;
     this->_auto = config._auto;
+    this->night = config.night;
 }
 
 PadInfo Detector::letterbox(Mat &img, Size new_shape, Scalar color, bool _auto, bool scaleFill, bool scaleup, int stride)
@@ -45,25 +46,44 @@ PadInfo Detector::letterbox(Mat &img, Size new_shape, Scalar color, bool _auto, 
 
 Detection Detector::detect(Mat &img)
 {
-    // Inference Time
-    cv::TickMeter timeRecorder;
-
     Mat im;
     img.copyTo(im);
     PadInfo padInfo = letterbox(im, this->inSize, Scalar(114, 114, 114), this->_auto, false, true, 32);
-    Mat blob;
-    cv::dnn::blobFromImage(im, blob, 1 / 255.0f, Size(im.cols, im.rows), Scalar(0, 0, 0), true, false);
-    std::vector<string> outLayerNames = this->model.getUnconnectedOutLayersNames();
-    std::vector<Mat> outs;
-    this->model.setInput(blob);
-    timeRecorder.start();
-    this->model.forward(outs, outLayerNames);
-    timeRecorder.stop();
 
-    float t = timeRecorder.getTimeMilli();
+    if (this->night == false)
+    {
+        // Inference Time
+        cv::TickMeter timeRecorder;
 
-    return {padInfo, outs, t};
+        Mat blob;
+        cv::dnn::blobFromImage(im, blob, 1 / 255.0f, Size(im.cols, im.rows), Scalar(0, 0, 0), true, false);
+        std::vector<string> outLayerNames = this->model.getUnconnectedOutLayersNames();
+        std::vector<Mat> outs;
+        this->model.setInput(blob);
+        timeRecorder.start();
+        this->model.forward(outs, outLayerNames);
+        timeRecorder.stop();
+
+        float t = timeRecorder.getTimeMilli();
+
+
+        return {padInfo, outs, t};
+    }
+    else
+    {
+        // Call night mode detection
+        vector<Mat> outs;
+        float t = 0;
+        preprocessNight(im);
+
+        detectNight(im);
+
+        imshow("Test 2", im);
+
+        return {padInfo, outs, t};
+    }
 }
+
 std::vector<Rect> Detector::postProcess(Mat &img, Detection &detection, Colors &cl)
 {
 
@@ -86,14 +106,7 @@ std::vector<Rect> Detector::postProcess(Mat &img, Detection &detection, Colors &
         confs *= sc;
         double minV, maxV;
         cv::Point minI, maxI;
-        // if(Rect(cx - w / 2, cy - h / 2, w, h).area() > boxMaxArea)
-        // {
-        //     if(Rect(cx - w / 2, cy - h / 2, w, h).area() > boxMaxArea + 400000)
-        //     {
-        //         std::cout << "Area : " << to_string(Rect(cx - w / 2, cy - h / 2, w, h).area()) << std::endl;
-        //     }
-        //     continue;
-        // }
+
         boxes.push_back(Rect(cx - w / 2, cy - h / 2, w, h));
         minMaxLoc(confs, &minV, &maxV, &minI, &maxI);
         scores.push_back(maxV);
@@ -171,3 +184,52 @@ vector<Rect> Detector::makeBoxes(Mat &img, Detection &detection)
     }
     return boxesOut;
 }
+
+void Detector::setNight(bool night)
+{
+    this->night = night;
+}
+
+void Detector::preprocessNight(Mat &img)
+{
+    GaussianBlur(img, img, Size(3, 3), 0);
+    cvtColor(img, img, cv::COLOR_BGR2GRAY);
+    Mat kernel = getStructuringElement(cv::MORPH_RECT, Size(5, 5));
+    threshold(img, img, 200, 255, cv::THRESH_BINARY);
+    erode(img, img, kernel);
+    dilate(img, img, kernel);
+}
+
+vector<vector<cv::Point>> getHulls(Mat imgInput)
+{
+
+    vector<vector<cv::Point>> contours;
+
+    findContours(imgInput, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    vector<Rect> boundRect(contours.size());
+    vector<vector<cv::Point>> hull(contours.size());
+
+    for( size_t i = 0; i < contours.size(); i++ )
+    {
+        convexHull(contours[i], hull[i]);
+    }
+
+    return hull;
+}
+
+vector<cv::Rect> pairHeadlights(vector<vector<cv::Point>> hulls)
+{
+
+}
+
+vector<Rect> Detector::detectNight(Mat &img)
+{
+    vector<cv::Rect> rectangle;
+    vector<vector<cv::Point>> hulls;
+    hulls = getHulls(img);
+
+    return rectangle;
+}
+
+
