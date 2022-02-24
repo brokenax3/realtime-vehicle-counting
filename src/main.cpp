@@ -17,7 +17,7 @@ int main()
     Detector detector(config);
 
     // Force night mode
-    detector.setNight(true);
+    detector.setNight(false);
 
     // Load a model.
     cv::dnn::Net net = cv::dnn::readNetFromONNX(model_path);
@@ -30,18 +30,18 @@ int main()
 
     // Open a video file or an image file or a camera stream.
     cv::VideoCapture cap;
+    // cv::Mat frame = cv::imread("testimg3.png");
 
-    // cap.open("./test_video/test_video.mp4");
-    cap.open("./test_video/low_light.mp4");
+    cap.open("./test_video/test_video.mp4");
+    // cap.open("./test_video/low_light.mp4");
 
     // Process frames.
-    cv::Mat frame, tmpFrame;
     vector<cv::Rect> boxes;
 
     // Create SORT Tracker
     Tracker tracker;
     auto frame_index = 0;
-
+    auto frame_count = 0;
     Colors cl = Colors();
 
     // Create Counter
@@ -49,21 +49,22 @@ int main()
 
     // Total Time Required
     cv::TickMeter totalTime;
+    cv::Mat frame, tmpFrame;
+
 
     // Detection
     Detection detection;
-
     totalTime.start();
-    while (true)
+    while(true)
     {
-        cap >> tmpFrame;
-
-        if(tmpFrame.empty() == true)
+        cap >> frame;
+        // frame = tmpFrame;
+        if(frame.empty() == true)
         {
             totalTime.stop();
             std::cout << "Actual count : 239" << std::endl;
-            // std::cout << "Program count : " << to_string(counter.count) << std::endl;
-            // std::cout << "Accuracy : " << to_string((1 - (float) abs(237 - counter.count) / 237) * 100) << "%" << std::endl;
+            std::cout << "Program count : " << to_string(counter.count) << std::endl;
+            std::cout << "Accuracy : " << to_string((1 - (float) abs(237 - counter.count) / 237) * 100) << "%" << std::endl;
             float t = totalTime.getTimeSec();
             std::cout << "Total Time Taken : " << to_string(t) + "s" << std::endl;
             std::cout << "Inference Time : " << to_string(detection.inference) + "ms"<< std::endl;
@@ -71,35 +72,32 @@ int main()
         }
         if(frame_index == 0)
         {
-            frame = tmpFrame;
             detection = detector.detect(frame);
-            // boxes = detector.makeBoxes(frame, detection);
 
-            // boxes = detector.postProcess(frame, detection, cl);
-            // tracker.Run(boxes);
-            // const auto tracks = tracker.GetTracks();
-            //
-            //
-            // counter.setPadInfo(detection.info);
+            counter.setPadInfo(detection.info);
         }
-        // Process every 2 frames for faster processing
-        if(frame_index == 2)
+
+        if(frame_index == 1)
         {
-            frame = tmpFrame;
             detection = detector.detect(frame);
-            // boxes = detector.postProcess(frame, detection, cl);
-            //
-            // frame_index = 0;
-            //
-            // tracker.Run(boxes);
-            // const auto tracks = tracker.GetTracks();
-            // counter.preprocess(frame);
-            // counter.process(frame, tracks, frame_index);
-        }
-        // counter.postprocess(frame);
-        // frame_index++;
 
+            frame_index = 0;
+        }
+        tracker.Run(boxes);
+        boxes = detector.postProcess(frame, detection, cl);
+        const auto tracks = tracker.GetTracks();
+        counter.preprocess(frame);
+        counter.process(frame, tracks, frame_count);
+        counter.postprocess(frame);
+
+        // for(cv::Rect rectangle : detection.boxes)
+        // {
+        //     cv::rectangle(frame, rectangle, Scalar(0, 0, 255), 1);
+        // }
+        frame_index++;
+        frame_count++;
         imshow(trackingWin, frame);
         cv::waitKey(60);
     }
+    // while(cv::waitKey(0) != 27);
 }

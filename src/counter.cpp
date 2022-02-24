@@ -113,5 +113,5 @@ int Counter::getCount()
 
 void Counter::postprocess(cv::Mat &img)
 {
-    cv::putText(img, "Count : " + to_string(this->count), cv::Point(this->padInfo.left, this->padInfo.top - 3), cv::FONT_HERSHEY_COMPLEX, 1, Scalar(0, 255, 0), 2);
+    cv::putText(img, "Count : " + to_string(this->count), cv::Point(this->padInfo.left, this->padInfo.top + 20), cv::FONT_HERSHEY_COMPLEX, 1, Scalar(0, 255, 0), 2);
 }

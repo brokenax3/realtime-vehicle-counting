@@ -30,6 +30,7 @@ struct Detection
     PadInfo info;
     std::vector<Mat> detection;
     float inference;
+    std::vector<Rect> boxes;
 };
 
 class Colors
@@ -82,6 +83,7 @@ class Detector
         void setNight(bool night);
         vector<Rect> detectNight(Mat &img);
         void preprocessNight(Mat &img);
+        void drawPredictionNight(Mat &img, std::vector<Rect> &boxes);
 
     private:
         float nmsThreshold;
