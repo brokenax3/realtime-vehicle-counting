@@ -1,41 +1,26 @@
 # Results
 
 ## CUDA Enabled
-1. Yolov5n + SORT + Track Every 2 Frames
-    - Program count : 253
-    - Accuracy : 93.248947%
-    - Total Time Taken : 1664.848511s
-    - Inference Time : 835.038757ms
-
-2. Yolov5s + SORT + Track Every 2 Frames
-    - Program count : 254
-    - Accuracy : 92.827003%
-    - Total Time Taken : 1682.734741s
-    - Inference Time : 831.467651ms
-
-3. Yolov5s + SORT + Track Every 3 Frames
-    - Program count : 174
-    - Accuracy : 73.417725%
-    - Total Time Taken : 1558.579834s
-    - Inference Time : 822.356262ms
-
-4. Yolov5s + SORT + Track Every 1 Frames
-    - Program count : 301
-    - Accuracy : 72.995781%
-    - Total Time Taken : 1837.067993s
-    - Inference Time : 834.233704ms
-
-5. Yolov5n + SORT + Track Every 1 Frame
-    - Program count : 306
-    - Accuracy : 70.886078%
-    - Total Time Taken : 1874.999268s
-    - Inference Time : 804.715942ms
-
-6. v61_Yolov5n6 + SORT + Track Every 1 Frame
-    - Program count : 216
-    - Accuracy : 91.139236%
-    - Total Time Taken : 1857.284180s
-    - Inference Time : 816.559082ms
+1. yolov5n-opt + SORT
+    - Program count : 223
+    - Accuracy : 94.092827%
+    - FPS : 43.182
+    - Inference Time : 2.116935ms
+2. yolov5m + SORT
+    - Program count : 229
+    - Accuracy : 96.624466%
+    - FPS : 21.7391
+    - Inference Time : 3.633141ms
+3. yolov5s + SORT
+    - Program count : 229
+    - Accuracy : 96.624466%
+    - FPS : 32.2581
+    - Inference Time : 2.036905ms
+4. yolov5n-opt + SORT + 1 kMinHits
+    - Program count : 224
+    - Accuracy : 94.514771%
+    - FPS : 47.619
+    - Inference Time : 1.979967ms
 
 # Actual Count
 - ./test_video/ == 239

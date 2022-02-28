@@ -1,9 +1,6 @@
 #include "tracker.h"
 
-
-Tracker::Tracker() {
-    id_ = 0;
-}
+Tracker::Tracker() { id_ = 0; }
 
 float Tracker::CalculateIou(const cv::Rect& det, const Track& track) {
     auto trk = track.GetStateAsBbox();
@@ -24,64 +21,59 @@ float Tracker::CalculateIou(const cv::Rect& det, const Track& track) {
     return iou;
 }
 
-
-void Tracker::HungarianMatching(const std::vector<std::vector<float>>& iou_matrix,
-                                size_t nrows, size_t ncols,
-                                std::vector<std::vector<float>>& association) {
+void Tracker::HungarianMatching(
+    const std::vector<std::vector<float>>& iou_matrix, size_t nrows,
+    size_t ncols, std::vector<std::vector<float>>& association) {
     Matrix<float> matrix(nrows, ncols);
     // Initialize matrix with IOU values
-    for (size_t i = 0 ; i < nrows ; i++) {
-        for (size_t j = 0 ; j < ncols ; j++) {
+    for (size_t i = 0; i < nrows; i++) {
+        for (size_t j = 0; j < ncols; j++) {
             // Multiply by -1 to find max cost
             if (iou_matrix[i][j] != 0) {
                 matrix(i, j) = -iou_matrix[i][j];
-            }
-            else {
-                // TODO: figure out why we have to assign value to get correct result
+            } else {
+                // TODO: figure out why we have to assign value to get correct
+                // result
                 matrix(i, j) = 1.0f;
             }
         }
     }
 
-//    // Display begin matrix state.
-//    for (size_t row = 0 ; row < nrows ; row++) {
-//        for (size_t col = 0 ; col < ncols ; col++) {
-//            std::cout.width(10);
-//            std::cout << matrix(row,col) << ",";
-//        }
-//        std::cout << std::endl;
-//    }
-//    std::cout << std::endl;
-
+    //    // Display begin matrix state.
+    //    for (size_t row = 0 ; row < nrows ; row++) {
+    //        for (size_t col = 0 ; col < ncols ; col++) {
+    //            std::cout.width(10);
+    //            std::cout << matrix(row,col) << ",";
+    //        }
+    //        std::cout << std::endl;
+    //    }
+    //    std::cout << std::endl;
 
     // Apply Kuhn-Munkres algorithm to matrix.
     Munkres<float> m;
     m.solve(matrix);
 
-//    // Display solved matrix.
-//    for (size_t row = 0 ; row < nrows ; row++) {
-//        for (size_t col = 0 ; col < ncols ; col++) {
-//            std::cout.width(2);
-//            std::cout << matrix(row,col) << ",";
-//        }
-//        std::cout << std::endl;
-//    }
-//    std::cout << std::endl;
+    //    // Display solved matrix.
+    //    for (size_t row = 0 ; row < nrows ; row++) {
+    //        for (size_t col = 0 ; col < ncols ; col++) {
+    //            std::cout.width(2);
+    //            std::cout << matrix(row,col) << ",";
+    //        }
+    //        std::cout << std::endl;
+    //    }
+    //    std::cout << std::endl;
 
-    for (size_t i = 0 ; i < nrows ; i++) {
-        for (size_t j = 0 ; j < ncols ; j++) {
+    for (size_t i = 0; i < nrows; i++) {
+        for (size_t j = 0; j < ncols; j++) {
             association[i][j] = matrix(i, j);
         }
     }
 }
 
-
-void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detection,
-                                            std::map<int, Track>& tracks,
-                                            std::map<int, cv::Rect>& matched,
-                                            std::vector<cv::Rect>& unmatched_det,
-                                            float iou_threshold) {
-
+void Tracker::AssociateDetectionsToTrackers(
+    const std::vector<cv::Rect>& detection, std::map<int, Track>& tracks,
+    std::map<int, cv::Rect>& matched, std::vector<cv::Rect>& unmatched_det,
+    float iou_threshold) {
     // Set all detection as unmatched if no tracks existing
     if (tracks.empty()) {
         for (const auto& det : detection) {
@@ -97,7 +89,6 @@ void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detecti
     std::vector<std::vector<float>> association;
     // resize association matrix based on number of detection and tracks
     association.resize(detection.size(), std::vector<float>(tracks.size()));
-
 
     // row - detection, column - tracks
     for (size_t i = 0; i < detection.size(); i++) {
@@ -133,11 +124,9 @@ void Tracker::AssociateDetectionsToTrackers(const std::vector<cv::Rect>& detecti
     }
 }
 
-
 void Tracker::Run(const std::vector<cv::Rect>& detections) {
-
     /*** Predict internal tracks from previous frame ***/
-    for (auto &track : tracks_) {
+    for (auto& track : tracks_) {
         track.second.Predict();
     }
 
@@ -148,17 +137,18 @@ void Tracker::Run(const std::vector<cv::Rect>& detections) {
 
     // return values - matched, unmatched_det
     if (!detections.empty()) {
-        AssociateDetectionsToTrackers(detections, tracks_, matched, unmatched_det);
+        AssociateDetectionsToTrackers(detections, tracks_, matched,
+                                      unmatched_det);
     }
 
     /*** Update tracks with associated bbox ***/
-    for (const auto &match : matched) {
-        const auto &ID = match.first;
+    for (const auto& match : matched) {
+        const auto& ID = match.first;
         tracks_[ID].Update(match.second);
     }
 
     /*** Create new tracks for unmatched detections ***/
-    for (const auto &det : unmatched_det) {
+    for (const auto& det : unmatched_det) {
         Track tracker;
         tracker.Init(det);
         // Create new track and generate new ID
@@ -175,7 +165,4 @@ void Tracker::Run(const std::vector<cv::Rect>& detections) {
     }
 }
 
-
-std::map<int, Track> Tracker::GetTracks() {
-    return tracks_;
-}
+std::map<int, Track> Tracker::GetTracks() { return tracks_; }
