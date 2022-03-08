@@ -1,21 +1,29 @@
 #include "counter.h"
-void Counter::setPadInfo(PadInfo padInfo) { this->padInfo = padInfo; }
+
+void Counter::setParams(Roi roiA, Roi roiB, PadInfo padInfo) {
+    this->padInfo = padInfo;
+
+    // If default ROI values are set, let the y value of roiA to be the top of
+    // the frame
+    if ((roiA.x == 0) && (roiA.y == 0)) {
+        roiA.y = padInfo.top;
+    }
+
+    cv::Rect rectA(roiA.x, roiA.y, roiA.width, roiA.height);
+    cv::Rect rectB(roiB.x, roiB.y, roiB.width, roiB.height);
+
+    this->roiA = rectA;
+    this->roiB = rectB;
+};
 
 void Counter::preprocess(cv::Mat &img) {
-    cv::Rect roiA(this->padInfo.left, this->padInfo.top + 50, img.cols,
-                  roiHeight);
-    cv::Rect roiB(this->padInfo.left,
-                  img.cols - this->padInfo.bottom - roiHeight - 50, img.cols,
-                  roiHeight);
-
-    // cv::Mat imgTest = img.clone();
-    this->roiA = roiA;
-    this->roiB = roiB;
-
-    cv::rectangle(img, roiA, cv::Scalar(0, 255, 255), 1);
-    cv::rectangle(img, roiB, cv::Scalar(0, 0, 255), 1);
+    cv::rectangle(img, this->roiA, cv::Scalar(0, 255, 255), 1);
+    cv::rectangle(img, this->roiB, cv::Scalar(0, 0, 255), 1);
 }
 
+// TODO: Counting Both Ways
+//  Current implementation counts when the object passes through ROIA and then
+//  ROIB
 void Counter::process(cv::Mat &img, const std::map<int, Track> tracks,
                       int frame_index) {
     // for(const auto& [id, track] : tracks)
@@ -100,10 +108,20 @@ void Counter::process(cv::Mat &img, const std::map<int, Track> tracks,
     }
 }
 
+void Counter::processNight(cv::Mat &img, const std::map<int, Track> tracks,
+                           int frame_index) {
+    for (auto &trk : tracks) {
+        // Only count tracks which meet certain criteria
+        if (trk.second.coast_cycles_ < kMaxCoastCycles &&
+            (trk.second.hit_streak_ >= kMinHits || frame_index < kMinHits)) {
+        }
+    }
+}
+
 int Counter::getCount() { return this->count; }
 
 void Counter::postprocess(cv::Mat &img) {
     cv::putText(img, "Count : " + to_string(this->count),
-                cv::Point(this->padInfo.left, this->padInfo.top + 20),
+                cv::Point(this->padInfo.left, this->padInfo.top - 25),
                 cv::FONT_HERSHEY_COMPLEX, 1, Scalar(0, 255, 0), 2);
 }

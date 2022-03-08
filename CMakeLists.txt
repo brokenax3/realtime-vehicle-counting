@@ -3,18 +3,17 @@ cmake_minimum_required(VERSION 3.22)
 project(realtime-counting)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -pthread")
-set(INFERENCE_HELPER_ENABLE_OPENCV on)
 # set(CMAKE_CXX_STANDARD 14)
 # set(CMAKE_CXX_STANDARD_REQUIRED True)
-
+# add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 # Check for dependencies
 FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 INCLUDE_DIRECTORIES(
     ${OpenCV_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/include
     )
-# set(INFERENCE_HELPER_DIR ${CMAKE_CURRENT_LIST_DIR}/extern/InferenceHelper/)
-# add_subdirectory(${INFERENCE_HELPER_DIR}/inference_helper inference_helper)
 
 
 file(GLOB SOURCE_FILES src/*.cpp)
@@ -25,6 +24,5 @@ message(STATUS "${SOURCE_FILES}")
 ADD_EXECUTABLE(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
 TARGET_LINK_LIBRARIES(
     ${CMAKE_PROJECT_NAME}
-    ${OpenCV_LIBS})
-    # InferenceHelper)
-# target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${INFERENCE_HELPER_DIR}/inference_helper)
+    ${OpenCV_LIBS}
+    ${Boost_LIBRARIES})

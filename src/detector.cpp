@@ -214,22 +214,34 @@ vector<Rect> Detector::makeBoxes(Mat &img, Detection &detection) {
     return boxesOut;
 }
 
-void Detector::setNight(bool night) { this->night = night; }
+void Detector::setNight(bool night) {
+    this->night = night;
+    this->pBackSub = cv::createBackgroundSubtractorKNN();
+}
 
 void Detector::preprocessNight(Mat &img) {
+    Mat mask;
     GaussianBlur(img, img, Size(3, 3), 0);
     cvtColor(img, img, cv::COLOR_BGR2GRAY);
-    Mat kernel = getStructuringElement(cv::MORPH_RECT, Size(5, 5));
+    Mat kernel = getStructuringElement(cv::MORPH_RECT, Size(2, 2));
+    Mat dkernel = getStructuringElement(cv::MORPH_RECT, Size(5, 5));
+    // this->pBackSub->apply(img, mask);
     threshold(img, img, 200, 255, cv::THRESH_BINARY);
     erode(img, img, kernel);
     dilate(img, img, kernel);
+    // imshow("Test Test", mask);
 }
 
 vector<vector<cv::Point>> getHulls(Mat imgInput) {
     vector<vector<cv::Point>> contours;
+    Mat tmp = imgInput.clone();
 
-    findContours(imgInput, contours, cv::RETR_EXTERNAL,
-                 cv::CHAIN_APPROX_SIMPLE);
+    // cvtColor(tmp, tmp, cv::COLOR_BGR2GRAY);
+    // threshold(tmp, tmp, 200, 255, cv::THRESH_BINARY);
+
+    findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    // findContours(imgInput, contours, cv::RETR_EXTERNAL,
+    // cv::CHAIN_APPROX_SIMPLE);
 
     vector<Rect> boundRect(contours.size());
     vector<vector<cv::Point>> hull(contours.size());
@@ -254,7 +266,10 @@ vector<cv::Rect> pairHeadlights(vector<vector<cv::Point>> hulls) {
         cv::Moments tmp_m = moments(hulls[i]);
 
         // Remove very large areas
-        if (tmp_m.m00 > 300 || tmp_m.m00 < 100) {
+        // if (tmp_m.m00 > 300 || tmp_m.m00 < 100) {
+        //     continue;
+        // }
+        if (tmp_m.m00 > 300) {
             continue;
         }
 
@@ -332,13 +347,12 @@ vector<cv::Rect> pairHeadlights(vector<vector<cv::Point>> hulls) {
         if (v_mu[i].size() < 2) {
             continue;
         }
-        // for(size_t j = 0; j < v_mu[i].size(); j++)
-        // {
-        //     std::cout << "Index j : " << j;
-        //     std::cout << "Area : " << v_mu[i][j].m00;
-        //     std::cout << "Centroid X : " << v_mu[i][j].m10 / v_mu[i][j].m00;
-        //     std::cout << "Centroid Y : " << v_mu[i][j].m01 / v_mu[i][j].m00
-        //     << std::endl;
+        // for (size_t j = 0; j < v_mu[i].size(); j++) {
+        // std::cout << "Index j : " << j;
+        // std::cout << "Area : " << v_mu[i][j].m00;
+        // std::cout << "Centroid X : " << v_mu[i][j].m10 / v_mu[i][j].m00;
+        // std::cout << "Centroid Y : " << v_mu[i][j].m01 / v_mu[i][j].m00
+        //           << std::endl;
         // }
         // int width = 100;
         // int height = 50;
