@@ -1,6 +1,6 @@
 #include "detector.h"
 
-Detector::Detector(Config &config) {
+Detector::Detector(Config &config, std::vector<cv::Rect> nightRois) {
     this->nmsThreshold = config.nmsThreshold;
     this->confThreshold = config.confThreshold;
     ifstream ifs(config.classNamePath);
@@ -13,10 +13,13 @@ Detector::Detector(Config &config) {
     this->inSize = config.size;
     this->_auto = config._auto;
     this->night = config.night;
+
+    this->nightRois = nightRois;
 }
 
-PadInfo Detector::letterbox(Mat &img, Size new_shape, Scalar color, bool _auto,
-                            bool scaleFill, bool scaleup, int stride) {
+PadInfo Detector::letterbox(cv::Mat &img, cv::Size new_shape, cv::Scalar color,
+                            bool _auto, bool scaleFill, bool scaleup,
+                            int stride) {
     float width = img.cols;
     float height = img.rows;
     float r = min(new_shape.width / width, new_shape.height / height);
@@ -30,31 +33,33 @@ PadInfo Detector::letterbox(Mat &img, Size new_shape, Scalar color, bool _auto,
         dh %= stride;
     }
     dw /= 2, dh /= 2;
-    Mat dst;
-    resize(img, img, Size(new_unpadW, new_unpadH), 0, 0, cv::INTER_LINEAR);
+    cv::Mat dst;
+    resize(img, img, cv::Size(new_unpadW, new_unpadH), 0, 0, cv::INTER_LINEAR);
     int top = int(round(dh - 0.1));
     int bottom = int(round(dh + 0.1));
     int left = int(round(dw - 0.1));
     int right = int(round(dw + 0.1));
     copyMakeBorder(img, img, top, bottom, left, right, cv::BORDER_CONSTANT,
                    color);
+
     return {r, top, left, bottom};
 }
 
-Detection Detector::detect(Mat &img) {
-    Mat im;
+Detection Detector::detect(cv::Mat &img) {
+    cv::Mat im;
     img.copyTo(im);
     Detection detection;
-    PadInfo padInfo = letterbox(im, this->inSize, Scalar(114, 114, 114),
+
+    PadInfo padInfo = letterbox(im, this->inSize, cv::Scalar(114, 114, 114),
                                 this->_auto, false, true, 32);
 
     if (this->night == false) {
-        Mat blob;
-        cv::dnn::blobFromImage(im, blob, 1 / 255.0f, Size(im.cols, im.rows),
-                               Scalar(0, 0, 0), true, false);
+        cv::Mat blob;
+        cv::dnn::blobFromImage(im, blob, 1 / 255.0f, cv::Size(im.cols, im.rows),
+                               cv::Scalar(0, 0, 0), true, false);
         std::vector<string> outLayerNames =
             this->model.getUnconnectedOutLayersNames();
-        std::vector<Mat> outs;
+        std::vector<cv::Mat> outs;
         this->model.setInput(blob);
         this->model.forward(outs, outLayerNames);
 
@@ -67,7 +72,7 @@ Detection Detector::detect(Mat &img) {
         cv::TickMeter timeRecorder;
         // Call night mode detection
         // vector<Mat> outs;
-        vector<Rect> rectangles;
+        vector<cv::Rect> rectangles;
         timeRecorder.start();
         preprocessNight(im);
 
@@ -86,15 +91,18 @@ Detection Detector::detect(Mat &img) {
     }
 }
 
-std::vector<Rect> Detector::postProcess(Mat &img, Detection &detection,
-                                        Colors &cl) {
-    letterbox(img, this->inSize, Scalar(114, 114, 114), this->_auto, false,
+std::vector<cv::Rect> Detector::postProcess(cv::Mat &img, Detection &detection,
+                                            Colors &cl) {
+    letterbox(img, this->inSize, cv::Scalar(114, 114, 114), this->_auto, false,
               true, 32);
-    std::vector<Rect> boxesOut;
+
+    std::vector<cv::Rect> boxesOut;
+
     if (this->night == false) {
-        std::vector<Mat> outs = detection.detection;
-        Mat out(outs[0].size[1], outs[0].size[2], CV_32F, outs[0].ptr<float>());
-        std::vector<Rect> boxes;
+        std::vector<cv::Mat> outs = detection.detection;
+        cv::Mat out(outs[0].size[1], outs[0].size[2], CV_32F,
+                    outs[0].ptr<float>());
+        std::vector<cv::Rect> boxes;
         std::vector<float> scores;
         std::vector<int> indices;
         std::vector<int> classIndexList;
@@ -104,12 +112,12 @@ std::vector<Rect> Detector::postProcess(Mat &img, Detection &detection,
             float w = out.at<float>(r, 2);
             float h = out.at<float>(r, 3);
             float sc = out.at<float>(r, 4);
-            Mat confs = out.row(r).colRange(5, 85);
+            cv::Mat confs = out.row(r).colRange(5, 85);
             confs *= sc;
             double minV, maxV;
             cv::Point minI, maxI;
 
-            boxes.push_back(Rect(cx - w / 2, cy - h / 2, w, h));
+            boxes.push_back(cv::Rect(cx - w / 2, cy - h / 2, w, h));
             minMaxLoc(confs, &minV, &maxV, &minI, &maxI);
             scores.push_back(maxV);
             indices.push_back(r);
@@ -136,73 +144,77 @@ std::vector<Rect> Detector::postProcess(Mat &img, Detection &detection,
         boxesOut = detection.boxes;
         drawPredictionNight(img, boxesOut);
     }
+
     std::string label =
         cv::format("Inference time : %.2f ms", detection.inference);
     putText(img, label, cv::Point(0, 15), cv::FONT_HERSHEY_SIMPLEX, 0.5,
-            Scalar(0, 255, 0), 1);
+            cv::Scalar(0, 255, 0), 1);
 
     return boxesOut;
 }
 
-void Detector::drawPrediction(Mat &img, std::vector<Rect> &boxes,
+void Detector::drawPrediction(cv::Mat &img, std::vector<cv::Rect> &boxes,
                               std::vector<float> &scores,
                               std::vector<int> &clsIndexs,
                               std::vector<int> &ind, Colors &cl) {
     for (long unsigned int i = 0; i < ind.size(); i++) {
-        Rect rect = boxes[ind[i]];
+        cv::Rect rect = boxes[ind[i]];
         float score = scores[ind[i]];
         string name = this->classNames[clsIndexs[i]];
         int color_ind = clsIndexs[i] % 20;
-        Scalar color = cl.palette[color_ind];
+        cv::Scalar color = cl.palette[color_ind];
         rectangle(img, rect, color);
         char s_text[80];
         sprintf(s_text, "%.2f", round(score * 1e3) / 1e3);
         string label = name + " " + s_text;
 
         int baseLine = 0;
-        Size textSize =
+        cv::Size textSize =
             getTextSize(label, cv::FONT_HERSHEY_PLAIN, 0.7, 1, &baseLine);
         baseLine += 2;
         rectangle(img,
-                  Rect(rect.x, rect.y - textSize.height, textSize.width + 1,
-                       textSize.height + 1),
+                  cv::Rect(rect.x, rect.y - textSize.height, textSize.width + 1,
+                           textSize.height + 1),
                   color, -1);
         putText(img, label, cv::Point(rect.x, rect.y), cv::FONT_HERSHEY_PLAIN,
-                0.7, Scalar(255, 255, 255), 1);
+                0.7, cv::Scalar(255, 255, 255), 1);
     }
 }
 
-void Detector::drawPredictionNight(Mat &img, std::vector<Rect> &boxes) {
+void Detector::drawPredictionNight(cv::Mat &img, std::vector<cv::Rect> &boxes) {
     cv::putText(img, "Night Mode ON", cv::Point(img.rows - 200, 30),
-                cv::FONT_HERSHEY_PLAIN, 1.4, Scalar(0, 255, 0), 2);
+                cv::FONT_HERSHEY_PLAIN, 1.4, cv::Scalar(0, 255, 0), 2);
+
     for (size_t i = 0; i < boxes.size(); i++) {
-        rectangle(img, boxes[i], Scalar(0, 255, 0), 1);
+        rectangle(img, boxes[i], cv::Scalar(0, 255, 0), 1);
     }
 }
 
-vector<Rect> Detector::makeBoxes(Mat &img, Detection &detection) {
-    letterbox(img, this->inSize, Scalar(114, 114, 114), this->_auto, false,
+vector<cv::Rect> Detector::makeBoxes(cv::Mat &img, Detection &detection) {
+    letterbox(img, this->inSize, cv::Scalar(114, 114, 114), this->_auto, false,
               true, 32);
-    vector<Rect> boxesOut;
-    std::vector<Mat> outs = detection.detection;
-    Mat out(outs[0].size[1], outs[0].size[2], CV_32F, outs[0].ptr<float>());
-    std::vector<Rect> boxes;
+
+    vector<cv::Rect> boxesOut;
+    std::vector<cv::Mat> outs = detection.detection;
+    cv::Mat out(outs[0].size[1], outs[0].size[2], CV_32F, outs[0].ptr<float>());
+    std::vector<cv::Rect> boxes;
     std::vector<float> scores;
     std::vector<int> indices;
     std::vector<int> classIndexList;
+
     for (int r = 0; r < out.rows; r++) {
         float cx = out.at<float>(r, 0);
         float cy = out.at<float>(r, 1);
         float w = out.at<float>(r, 2);
         float h = out.at<float>(r, 3);
         float sc = out.at<float>(r, 4);
-        Mat confs = out.row(r).colRange(5, 85);
+        cv::Mat confs = out.row(r).colRange(5, 85);
         confs *= sc;
         double minV, maxV;
         cv::Point minI, maxI;
         minMaxLoc(confs, &minV, &maxV, &minI, &maxI);
         scores.push_back(maxV);
-        boxes.push_back(Rect(cx - w / 2, cy - h / 2, w, h));
+        boxes.push_back(cv::Rect(cx - w / 2, cy - h / 2, w, h));
         indices.push_back(r);
     }
 
@@ -219,12 +231,13 @@ void Detector::setNight(bool night) {
     this->pBackSub = cv::createBackgroundSubtractorKNN();
 }
 
-void Detector::preprocessNight(Mat &img) {
-    Mat mask;
-    GaussianBlur(img, img, Size(3, 3), 0);
+void Detector::preprocessNight(cv::Mat &img) {
+    cv::Mat mask;
+
+    GaussianBlur(img, img, cv::Size(3, 3), 0);
     cvtColor(img, img, cv::COLOR_BGR2GRAY);
-    Mat kernel = getStructuringElement(cv::MORPH_RECT, Size(2, 2));
-    Mat dkernel = getStructuringElement(cv::MORPH_RECT, Size(5, 5));
+    cv::Mat kernel = getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+    cv::Mat dkernel = getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
     // this->pBackSub->apply(img, mask);
     threshold(img, img, 200, 255, cv::THRESH_BINARY);
     erode(img, img, kernel);
@@ -232,9 +245,9 @@ void Detector::preprocessNight(Mat &img) {
     // imshow("Test Test", mask);
 }
 
-vector<vector<cv::Point>> getHulls(Mat imgInput) {
+vector<vector<cv::Point>> getHulls(cv::Mat imgInput) {
     vector<vector<cv::Point>> contours;
-    Mat tmp = imgInput.clone();
+    cv::Mat tmp = imgInput.clone();
 
     // cvtColor(tmp, tmp, cv::COLOR_BGR2GRAY);
     // threshold(tmp, tmp, 200, 255, cv::THRESH_BINARY);
@@ -243,7 +256,7 @@ vector<vector<cv::Point>> getHulls(Mat imgInput) {
     // findContours(imgInput, contours, cv::RETR_EXTERNAL,
     // cv::CHAIN_APPROX_SIMPLE);
 
-    vector<Rect> boundRect(contours.size());
+    vector<cv::Rect> boundRect(contours.size());
     vector<vector<cv::Point>> hull(contours.size());
 
     for (size_t i = 0; i < contours.size(); i++) {
@@ -336,11 +349,7 @@ vector<cv::Rect> pairHeadlights(vector<vector<cv::Point>> hulls) {
             }
             cpy_mu.pop_back();
         }
-
-        // std::cout << "cpy_mu count : " << cpy_mu.size() << std::endl;
     }
-
-    // vector<vector<cv::Point>> new_hulls;
 
     for (size_t i = 0; i < v_mu.size(); i++) {
         // std::cout << "Index i : " << i << std::endl;
@@ -376,7 +385,7 @@ vector<cv::Rect> pairHeadlights(vector<vector<cv::Point>> hulls) {
     return rectangles;
 }
 
-vector<Rect> Detector::detectNight(Mat &img) {
+vector<cv::Rect> Detector::detectNight(cv::Mat &img) {
     vector<cv::Rect> rectangles;
     vector<vector<cv::Point>> hulls;
     hulls = getHulls(img);
@@ -395,4 +404,48 @@ vector<Rect> Detector::detectNight(Mat &img) {
 
     // imshow("Test", drawing);
     return rectangles;
+}
+
+bool Detector::autoNightMode(cv::Mat &img, bool preview, PadInfo padInfo) {
+    long unsigned int roiBlack = 0;
+
+    cv::Mat prevImg = img.clone();
+
+    for (cv::Rect roiNight : this->nightRois) {
+        roiNight.y = roiNight.y + padInfo.top;
+        int index_start_x = roiNight.x;
+        int index_start_y = roiNight.y;
+        int index_end_x = index_start_x + roiNight.width;
+        int index_end_y = index_start_y + roiNight.height;
+
+        // cout << padInfo.top << endl;
+        // cout << index_start_x << endl;
+        // cout << index_start_y << endl;
+        // cout << index_end_x << endl;
+        // cout << index_end_y << endl;
+        cv::Mat tmptmpImg = prevImg.clone();
+
+        cv::cvtColor(tmptmpImg, tmptmpImg, cv::COLOR_BGR2GRAY);
+        threshold(tmptmpImg, tmptmpImg, 150, 255, cv::THRESH_BINARY);
+        cv::Mat tmpImg = tmptmpImg(cv::Range(index_start_y, index_end_y),
+                                   cv::Range(index_start_x, index_end_x));
+
+        // imshow("CROP", tmpImg);
+
+        if (cv::countNonZero(tmpImg) == 0) {
+            roiBlack++;
+        }
+        if (preview == true) {
+            cv::rectangle(img, roiNight, cv::Scalar(255, 0, 0));
+        }
+    }
+    // cout << roiBlack << endl;
+
+    // imshow("Preview Night Mode Detection", prevImg);
+
+    if (roiBlack == this->nightRois.size()) {
+        return true;
+    } else {
+        return false;
+    }
 }

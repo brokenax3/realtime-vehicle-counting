@@ -5,6 +5,7 @@
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 #include <iostream>
+#include <opencv2/core.hpp>
 
 namespace po = boost::program_options;
 
@@ -25,4 +26,8 @@ struct Roi {
 };
 
 po::variables_map parse_cmd(int argc, char* argv[]);
+
+int handleError(int status, const char* func_name, const char* err_msg,
+                const char* file_name, int line, void* userdata);
+
 #endif

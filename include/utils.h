@@ -1,6 +1,9 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+// Escape constant
+const int ESC = 27;
+
 // Constants
 constexpr int kNumColors = 32;
 constexpr int kMaxCoastCycles = 6;

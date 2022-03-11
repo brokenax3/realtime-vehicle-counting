@@ -9,13 +9,10 @@
 #include <string>
 #include <vector>
 
+#include "helper.h"
 #include "utils.h"
 
 using namespace std;
-using cv::Mat;
-using cv::Rect;
-using cv::Scalar;
-using cv::Size;
 
 struct PadInfo {
     float scale;
@@ -26,15 +23,15 @@ struct PadInfo {
 
 struct Detection {
     PadInfo info;
-    std::vector<Mat> detection;
+    std::vector<cv::Mat> detection;
     float inference;
-    std::vector<Rect> boxes;
+    std::vector<cv::Rect> boxes;
 };
 
 class Colors {
    public:
     vector<string> hex_str;
-    vector<Scalar> palette;
+    vector<cv::Scalar> palette;
     int n = 20;
     Colors() : hex_str(20, "") {
         this->hex_str = {"FF3838", "FF9D97", "FF701F", "FFB21D", "CFD231",
@@ -45,12 +42,12 @@ class Colors {
             palette.push_back(hex2rgb(ele));
         }
     }
-    Scalar hex2rgb(string &hex_color) {
+    cv::Scalar hex2rgb(string &hex_color) {
         int b, g, r;
         sscanf(hex_color.substr(0, 2).c_str(), "%x", &r);
         sscanf(hex_color.substr(2, 2).c_str(), "%x", &g);
         sscanf(hex_color.substr(4, 2).c_str(), "%x", &b);
-        return Scalar(b, g, r);
+        return cv::Scalar(b, g, r);
     }
 };
 
@@ -59,7 +56,7 @@ struct Config {
     float nmsThreshold;
     string weightPath;
     string classNamePath;
-    Size size;
+    cv::Size size;
     bool _auto;
 
     bool night;
@@ -67,29 +64,33 @@ struct Config {
 
 class Detector {
    public:
-    Detector(Config &config);
+    Detector(Config &config, std::vector<cv::Rect> nightRois);
     ~Detector() = default;
-    Detection detect(Mat &img);
+    Detection detect(cv::Mat &img);
     // void postProcess(Mat &img, Detection &detection, Colors&cl);
-    std::vector<Rect> postProcess(Mat &img, Detection &detection, Colors &cl);
-    vector<Rect> makeBoxes(Mat &img, Detection &detection);
-    PadInfo letterbox(Mat &img, Size new_shape, Scalar color, bool _auto,
-                      bool scaleFill, bool scaleup, int stride);
+    std::vector<cv::Rect> postProcess(cv::Mat &img, Detection &detection,
+                                      Colors &cl);
+    vector<cv::Rect> makeBoxes(cv::Mat &img, Detection &detection);
+    PadInfo letterbox(cv::Mat &img, cv::Size new_shape, cv::Scalar color,
+                      bool _auto, bool scaleFill, bool scaleup, int stride);
     void setNight(bool night);
-    vector<Rect> detectNight(Mat &img);
-    void preprocessNight(Mat &img);
-    void drawPredictionNight(Mat &img, std::vector<Rect> &boxes);
+    vector<cv::Rect> detectNight(cv::Mat &img);
+    void preprocessNight(cv::Mat &img);
+    bool autoNightMode(cv::Mat &img, bool preview, PadInfo padInfo);
 
    private:
     float nmsThreshold;
     float confThreshold;
-    Size inSize;
+    cv::Size inSize;
     bool _auto;
     bool night;
     vector<string> classNames;
     cv::dnn::Net model;
     cv::Ptr<cv::BackgroundSubtractor> pBackSub;
-    void drawPrediction(Mat &img, vector<Rect> &boxes, vector<float> &sc,
-                        vector<int> &clsIndexs, vector<int> &ind, Colors &cl);
+    void drawPrediction(cv::Mat &img, vector<cv::Rect> &boxes,
+                        vector<float> &sc, vector<int> &clsIndexs,
+                        vector<int> &ind, Colors &cl);
+    void drawPredictionNight(cv::Mat &img, std::vector<cv::Rect> &boxes);
+    std::vector<cv::Rect> nightRois;
 };
 #endif

@@ -13,6 +13,7 @@ Debug
 
 # Test Footage
 test_video
+test_image
 
 # Deep Learning Configurations and Weights
 dnn_files

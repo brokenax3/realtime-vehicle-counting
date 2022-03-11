@@ -53,17 +53,33 @@ po::variables_map parse_cmd(int argc, char* argv[]) {
     config_options.add_options()(
         "roi_B", po::value<Roi>()->default_value(Roi{640, 100, 0, 350}),
         "Width, Height and Coordinates of Region of Interest B");
+    config_options.add_options()(
+        "night_mode", po::value<int>()->default_value(0), "Night Mode Toggle");
+    config_options.add_options()(
+        "night_roi_1", po::value<Roi>()->default_value(Roi{10, 10, 0, 0}),
+        "region of interest 1 to for night automation");
+    config_options.add_options()(
+        "night_roi_2", po::value<Roi>()->default_value(Roi{10, 10, 630, 350}),
+        "Region of Interest 2 to for Night Automation");
+    config_options.add_options()("preview", po::value<int>()->default_value(0),
+                                 "Preview Mode");
 
     po::options_description cmdline_options;
     po::variables_map vm;
 
     cmdline_options.add(general).add(config_options);
 
-    po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
+    try {
+        po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
+    } catch (po::unknown_option& e) {
+        std::cout << boost::format("[Error] %1%") % e.what() << std::endl;
+        exit(-1);
+    }
+
     try {
         po::notify(vm);
     } catch (std::exception& e) {
-        std::cerr << "Error :" << e.what() << std::endl;
+        std::cout << boost::format("[Error] %1%") % e.what() << std::endl;
         exit(-1);
     }
 
@@ -73,4 +89,11 @@ po::variables_map parse_cmd(int argc, char* argv[]) {
     }
 
     return vm;
+}
+
+// Handle Error by suppressing output
+int handleError(int status, const char* func_name, const char* err_msg,
+                const char* file_name, int line, void* userdata) {
+    // Do nothing -- will suppress console output
+    return 0;  // Return value is not used
 }

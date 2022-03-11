@@ -2,6 +2,18 @@
 
 ## test_video
 
+```bash
+# Parameters
+
+# The program runs with the following defaults
+./build/realtime-counting \
+    --model_path="./dnn_files/yolov5s-opt.onnx" \
+    --class_path="./dnn_files/coco_c.names" \
+    --model_size=640 \
+    --roi_A=640,100,0,0 \
+    --roi_B=640,100,0,350
+```
+
 - Actual Count = 239
 
 1. yolov5n-opt + SORT + default roi
@@ -9,12 +21,7 @@
    - Accuracy : 95.397491%
    - FPS : 47.619
    - Inference Time : 1.978215ms
-2. yolov5s + SORT + default roi
-   - Program count : 234
-   - Accuracy : 97.907951%
-   - FPS : 32.2581
-   - Inference Time : 2.048131ms
-3. yolov5s-opt + SORT + default roi
+2. yolov5s-opt + SORT + default roi
    - Program count : 235
    - Accuracy : 98.326363%
    - FPS : 32.2581

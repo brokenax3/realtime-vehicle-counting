@@ -1,0 +1,156 @@
+config:
+    Window:
+        styles:
+            border: &w-border-style "[#5A6572]{item}"
+            corner: *w-border-style
+
+    Container:
+        styles:
+            border: &c-border-style "[#7D98A1]{item}"
+            corner: *c-border-style
+
+    Button:
+        styles:
+            label: "[@#1C2220 #A9B4C2]{item}"
+            highlight: "[#1C2220 @#A9B4C2]{item}"
+
+    Splitter:
+        chars:
+            separator: "   |   "
+
+boxes:
+    OUTER: [
+        "█▀▀▀█",
+        "█ x █",
+        "█▄▄▄█",
+    ]
+
+markup:
+    title: "#A9B4C2 bold"
+    subtitle: "italic dim"
+    body: "245"
+
+widgets:
+    MainWindow:
+      type: Window
+      box: OUTER
+
+      width: 80
+      widgets:
+        - Button:
+            id: quit-app
+            label: "Quit"
+            parent_align: 2
+        - Label:
+            parent_align: 3
+            value: "This application is used to configure the Realtime Vehicle Counting Application."
+        - Label: {}
+        - Label:
+            parent_align: 3
+            value: "- Input Roi with the following format {width, height, x, y}."
+        - Label: {}
+
+        - Splitter:
+            widgets:
+              - Label:
+                  value: "ROI A "
+              - InputField:
+                  id: "input-roiA"
+                  value: "640, 100, 0, 0"
+                  styles:
+                    fill: "[@black brightwhite]{item}"
+
+        - Splitter:
+            widgets:
+              - Label:
+                  value: "ROI B "
+              - InputField:
+                  id: "input-roiB"
+                  value: "640, 100, 0, 350"
+                  styles:
+                    fill: "[@black brightwhite]{item}"
+
+
+        - Splitter:
+            widgets:
+              - Label:
+                  value: "Night Mode ROI A "
+              - InputField:
+                  id: "input-night-roiA"
+                  value: "10, 10, 0, 0"
+                  styles:
+                    fill: "[@black brightwhite]{item}"
+        - Splitter:
+            widgets:
+              - Label:
+                  value: "Night Mode ROI B "
+              - InputField:
+                  id: "input-night-roiB"
+                  value: "10, 10, 630, 350"
+                  styles:
+                    fill: "[@black brightwhite]{item}"
+
+        - Splitter:
+            widgets:
+              - Label:
+                   value: "Preview Toggle"
+              - Checkbox:
+                  id: "checkbox-preview"
+
+        - Splitter:
+            widgets:
+              - Label:
+                  id: model-name
+                  value: "Selected Model : yolov5n.onnx"
+              - Button:
+                  id: select-model
+                  label: "Select Deep Learning Model"
+
+        - Label: {}
+        - Container:
+            box: OUTER
+            widgets:
+              - Label:
+                  value: "[magenta]Parameters: "
+                  parent_align: 3
+              - Label:
+                  id: label-param
+                  value: "[@grey bold green]Press set to set application run parameters."
+              - Label:
+                  value: "[green]Output: "
+                  parent_align: 3
+              - Label:
+                  id: label-output
+                  value: "[@grey bold green]Start to get output."
+        - Label: {}
+
+        - Splitter:
+            chars:
+              separator: ""
+            widgets:
+              - Button:
+                  id: set-config
+                  label: "Set"
+              - Button:
+                  id: start-app
+                  label: "Start"
+        - Label: {}
+
+    ModelSelection:
+      type: Window
+      width: 40
+      widgets:
+        - Label:
+            value: "[title]Select a deep learning model"
+
+        - Button:
+            id: set-nano
+            label: "YOLOv5n"
+        - Button:
+            id: set-nano-opt
+            label: "YOLOv5n-opt"
+        - Button:
+            id: set-small
+            label: "YOLOv5s-opt"
+
+

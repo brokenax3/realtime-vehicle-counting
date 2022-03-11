@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <iostream>
@@ -13,9 +14,29 @@
 using namespace std;
 namespace po = boost::program_options;
 
+void previewRoi(cv::Mat frame, Detection detection, Detector detector,
+                Counter counter, Roi roiA, Roi roiB, Colors cl) {
+    bool isNight;
+
+    cv::Mat previewImage = frame.clone();
+
+    detection = detector.detect(previewImage);
+    counter.setParams(roiA, roiB, detection.info);
+    detector.postProcess(previewImage, detection, cl);
+    isNight = detector.autoNightMode(previewImage, true, detection.info);
+    counter.preprocess(previewImage);
+    detector.setNight(isNight);
+
+    imshow("Detection Preview", previewImage);
+}
+
 int main(int argc, char* argv[]) {
+    // OpenCV Configuration
+    int k;
+    cv::redirectError(handleError);
     // Parse arguments from command line
     po::variables_map vm;
+
     vm = parse_cmd(argc, argv);
 
     //
@@ -24,35 +45,40 @@ int main(int argc, char* argv[]) {
     string model_path = vm["model_path"].as<string>();
     string class_path = vm["class_path"].as<string>();
     int model_size = vm["model_size"].as<int>();
-    // int model_size = 640;
     Config config = {kMinConfidence,
                      nmsThreshold,
                      model_path,
                      class_path,
-                     Size(model_size, model_size),
+                     cv::Size(model_size, model_size),
                      false};
 
+    // Night Mode Configuration
+    bool isNight;
+    // Night Mode Detection Rois
+    std::vector<cv::Rect> nightRois;
+
+    for (int i = 1; i < 3; i++) {
+        string param_string = "night_roi_" + to_string(i);
+        Roi tempRoi = vm[param_string].as<Roi>();
+        nightRois.push_back(
+            cv::Rect(tempRoi.x, tempRoi.y, tempRoi.width, tempRoi.height));
+    }
+
     // Setup Object Detector
-    Detector detector(config);
+    Detector detector(config, nightRois);
 
     // Force night mode
-    detector.setNight(false);
-
-    // Create a window
-    static const string kWinName = "Deep learning object detection in OpenCV";
-    static const string trackingWin = "Tracking Window";
-    namedWindow(trackingWin, cv::WINDOW_NORMAL);
+    // detector.setNight(false);
 
     // Open a video file or an image file or a camera stream.
     cv::VideoCapture cap;
     // cv::Mat frame = cv::imread("testimg3.png");
-
     cap.open(2);
 
     // Check if Camera is available
     if (!cap.isOpened()) {
-        cerr << "Error! Unable to open camera" << endl;
-        return -1;
+        cout << "Error! Unable to open camera" << endl;
+        exit(-1);
     }
 
     // Process frames.
@@ -60,7 +86,6 @@ int main(int argc, char* argv[]) {
 
     // Create SORT Tracker
     Tracker tracker;
-    // auto frame_index = 0;
     auto frame_count = 0;
     Colors cl = Colors();
 
@@ -82,22 +107,45 @@ int main(int argc, char* argv[]) {
 
     int actual_count = vm["actual_count"].as<int>();
 
+    //
+    // Preview Mode Setting
+    //
+    int preview_bool = vm["preview"].as<int>();
+    while (preview_bool == 1) {
+        cap >> frame;
+        previewRoi(frame, detection, detector, counter, roiA, roiB, cl);
+        k = cv::waitKey(1);
+
+        // Press 's' to start and 'esc' to end
+        if (k == 's') {
+            cv::destroyWindow("Detection Preview");
+            break;
+        } else if (k == ESC) {
+            exit(1);
+        }
+    }
+
+    // Create a window
+    static const string trackingWin = "Tracking Window";
+    namedWindow(trackingWin, cv::WINDOW_NORMAL);
+
     while (true) {
+        k = cv::waitKey(1);
         auto fpsTimeStart = chrono::high_resolution_clock::now();
         cap >> frame;
 
-        if (frame.empty() == true) {
+        if (frame.empty() == true || k == 27) {
             cap.release();
-            cout << "Actual count : " << actual_count << endl;
-            cout << "Program count : " << to_string(counter.getCount()) << endl;
-            cout << "Accuracy : "
-                 << to_string(
-                        (1 - (float)abs(actual_count - counter.getCount()) /
-                                 actual_count) *
-                        100)
-                 << "%" << endl;
-            cout << "FPS : " << rtFPS << endl;
-            cout << "Inference Time : " << to_string(detection.inference) + "ms"
+            cout << boost::format("Actual count : %1% \n") % actual_count
+                 << boost::format("Program count : %1% \n") % counter.getCount()
+                 << boost::format("Accuracy : %1% \n") %
+                        to_string(
+                            (1 - (float)abs(actual_count - counter.getCount()) /
+                                     actual_count) *
+                            100)
+                 << boost::format("FPS : %1% \n") % rtFPS
+                 << boost::format("Inference Time : %1%ms \n") %
+                        to_string(detection.inference)
                  << endl;
             return 0;
         }
@@ -105,6 +153,11 @@ int main(int argc, char* argv[]) {
         if (frame_count == 0) {
             detection = detector.detect(frame);
             counter.setParams(roiA, roiB, detection.info);
+        }
+
+        if (frame_count % 120 == 0) {
+            isNight = detector.autoNightMode(frame, false, detection.info);
+            detector.setNight(isNight);
         }
 
         detection = detector.detect(frame);
@@ -137,12 +190,11 @@ int main(int argc, char* argv[]) {
                 (trk.second.hit_streak_ >= kMinHits ||
                  frame_count < kMinHits)) {
                 auto box = trk.second.GetStateAsBbox();
-                cv::rectangle(frame, box, Scalar(0, 0, 255), 1);
+                cv::rectangle(frame, box, cv::Scalar(0, 0, 255), 1);
             }
         }
 
         frame_count++;
         imshow(trackingWin, frame);
-        cv::waitKey(1);
     }
 }
