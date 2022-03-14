@@ -23,7 +23,7 @@ struct PadInfo {
 
 struct Detection {
     PadInfo info;
-    std::vector<cv::Mat> detection;
+    // std::vector<cv::Mat> detection;
     float inference;
     std::vector<cv::Rect> boxes;
 };
@@ -70,11 +70,7 @@ class Detector {
     // void postProcess(Mat &img, Detection &detection, Colors&cl);
     std::vector<cv::Rect> postProcess(cv::Mat &img, Detection &detection,
                                       Colors &cl);
-    vector<cv::Rect> makeBoxes(cv::Mat &img, Detection &detection);
-    PadInfo letterbox(cv::Mat &img, cv::Size new_shape, cv::Scalar color,
-                      bool _auto, bool scaleFill, bool scaleup, int stride);
     void setNight(bool night);
-    vector<cv::Rect> detectNight(cv::Mat &img);
     void preprocessNight(cv::Mat &img);
     bool autoNightMode(cv::Mat &img, bool preview, PadInfo padInfo);
 
@@ -87,10 +83,15 @@ class Detector {
     vector<string> classNames;
     cv::dnn::Net model;
     cv::Ptr<cv::BackgroundSubtractor> pBackSub;
+    PadInfo letterbox(cv::Mat &img, cv::Size new_shape, cv::Scalar color,
+                      bool _auto, bool scaleFill, bool scaleup, int stride);
     void drawPrediction(cv::Mat &img, vector<cv::Rect> &boxes,
                         vector<float> &sc, vector<int> &clsIndexs,
                         vector<int> &ind, Colors &cl);
+    void drawPredictionDay(cv::Mat &img, std::vector<cv::Rect> &boxes);
     void drawPredictionNight(cv::Mat &img, std::vector<cv::Rect> &boxes);
+    Detection detectNight(cv::Mat &img);
+    Detection detectDay(cv::Mat &img);
     std::vector<cv::Rect> nightRois;
 };
 #endif

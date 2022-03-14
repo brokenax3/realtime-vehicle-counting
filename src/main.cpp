@@ -68,7 +68,10 @@ int main(int argc, char* argv[]) {
     Detector detector(config, nightRois);
 
     // Force night mode
-    // detector.setNight(false);
+    int force_night = vm["night_mode"].as<int>() == 1;
+    if (force_night) {
+        detector.setNight(true);
+    }
 
     // Open a video file or an image file or a camera stream.
     cv::VideoCapture cap;
@@ -132,6 +135,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         k = cv::waitKey(1);
         auto fpsTimeStart = chrono::high_resolution_clock::now();
+
         cap >> frame;
 
         if (frame.empty() == true || k == 27) {
@@ -155,7 +159,7 @@ int main(int argc, char* argv[]) {
             counter.setParams(roiA, roiB, detection.info);
         }
 
-        if (frame_count % 120 == 0) {
+        if ((frame_count % 120 == 0) && (force_night == 0)) {
             isNight = detector.autoNightMode(frame, false, detection.info);
             detector.setNight(isNight);
         }
@@ -166,7 +170,7 @@ int main(int argc, char* argv[]) {
         tracker.Run(boxes);
         const auto tracks = tracker.GetTracks();
         counter.preprocess(frame);
-        counter.process(frame, tracks, frame_count);
+        counter.processExp(frame, tracks, frame_count);
         counter.postprocess(frame);
         auto fpsTimeStop = chrono::high_resolution_clock::now();
         auto fpsDuration = chrono::duration_cast<chrono::milliseconds>(
@@ -190,6 +194,10 @@ int main(int argc, char* argv[]) {
                 (trk.second.hit_streak_ >= kMinHits ||
                  frame_count < kMinHits)) {
                 auto box = trk.second.GetStateAsBbox();
+                // cv::putText(frame, std::to_string(trk.first),
+                //             cv::Point(box.tl().x, box.tl().y - 10),
+                //             cv::FONT_HERSHEY_DUPLEX, 2,
+                //             cv::Scalar(255, 255, 255), 2);
                 cv::rectangle(frame, box, cv::Scalar(0, 0, 255), 1);
             }
         }

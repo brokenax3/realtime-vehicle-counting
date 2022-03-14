@@ -94,7 +94,7 @@ def start_rvc():
     stdout_string = ""
 
     namespace.MainWindow.height = org_height + len(stdout_lines)
-    manager.alert(str(len(stdout_lines)))
+    # manager.alert(str(len(stdout_lines)))
     label_output.parent_align = 3
     label_output.padding = 2
 
@@ -108,6 +108,7 @@ with ptg.WindowManager() as manager:
 
     manager.add(namespace.MainWindow.center())
     namespace.MainWindow.set_title("Realtime Vehicle Counting Configuration")
+    namespace.MainWindow.bind(ptg.keys.ESC, lambda *_: manager.exit())
     # namespace.MainWindow.height = namespace.MainWindow.height + 10
     org_height = namespace.MainWindow.height + 1
     org_width = namespace.MainWindow.width

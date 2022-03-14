@@ -43,6 +43,8 @@ class Counter {
     // void setPadInfo(PadInfo padInfo);
     // ~Counter() = default;
     void preprocess(cv::Mat &img);
+    void processExp(cv::Mat &img, const std::map<int, Track> tracks,
+                    int frame_index);
     void process(cv::Mat &img, const std::map<int, Track> tracks,
                  int frame_index);
     void processNight(cv::Mat &img, const std::map<int, Track> tracks,

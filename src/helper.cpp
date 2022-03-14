@@ -56,10 +56,10 @@ po::variables_map parse_cmd(int argc, char* argv[]) {
     config_options.add_options()(
         "night_mode", po::value<int>()->default_value(0), "Night Mode Toggle");
     config_options.add_options()(
-        "night_roi_1", po::value<Roi>()->default_value(Roi{10, 10, 0, 0}),
+        "night_roi_1", po::value<Roi>()->default_value(Roi{20, 20, 0, 0}),
         "region of interest 1 to for night automation");
     config_options.add_options()(
-        "night_roi_2", po::value<Roi>()->default_value(Roi{10, 10, 630, 350}),
+        "night_roi_2", po::value<Roi>()->default_value(Roi{20, 20, 620, 340}),
         "Region of Interest 2 to for Night Automation");
     config_options.add_options()("preview", po::value<int>()->default_value(0),
                                  "Preview Mode");

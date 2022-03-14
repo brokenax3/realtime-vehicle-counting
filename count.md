@@ -48,8 +48,8 @@
    - FPS : 29.4118
    - Inference Time : 2.035006ms
 2. yolov5n-opt + SORT + default roi
-   - Program count : 354
-   - Accuracy : 96.195648%
+   - Program count : 358
+   - Accuracy : 97.282608%
    - FPS : 41.6667
    - Inference Time : 2.189759ms
 

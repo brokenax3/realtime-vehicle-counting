@@ -48,47 +48,64 @@ PadInfo Detector::letterbox(cv::Mat &img, cv::Size new_shape, cv::Scalar color,
 Detection Detector::detect(cv::Mat &img) {
     cv::Mat im;
     img.copyTo(im);
-    Detection detection;
 
-    PadInfo padInfo = letterbox(im, this->inSize, cv::Scalar(114, 114, 114),
-                                this->_auto, false, true, 32);
-
-    if (this->night == false) {
-        cv::Mat blob;
-        cv::dnn::blobFromImage(im, blob, 1 / 255.0f, cv::Size(im.cols, im.rows),
-                               cv::Scalar(0, 0, 0), true, false);
-        std::vector<string> outLayerNames =
-            this->model.getUnconnectedOutLayersNames();
-        std::vector<cv::Mat> outs;
-        this->model.setInput(blob);
-        this->model.forward(outs, outLayerNames);
-
-        detection.info = padInfo;
-        detection.detection = outs;
-
-        return detection;
+    if (this->night == true) {
+        return detectNight(im);
     } else {
-        // Inference Time
-        cv::TickMeter timeRecorder;
-        // Call night mode detection
-        // vector<Mat> outs;
-        vector<cv::Rect> rectangles;
-        timeRecorder.start();
-        preprocessNight(im);
-
-        rectangles = detectNight(im);
-
-        // imshow("Test 2", im);
-
-        detection.info = padInfo;
-        // detection.detection = outs;
-        detection.boxes = rectangles;
-        timeRecorder.stop();
-        float t = timeRecorder.getTimeMilli();
-        detection.inference = t;
-
-        return detection;
+        return detectDay(im);
     }
+}
+
+Detection Detector::detectDay(cv::Mat &img) {
+    Detection detection;
+    std::vector<cv::Rect> boxesOut;
+
+    PadInfo padInfo = letterbox(img, this->inSize, cv::Scalar(114, 114, 114),
+                                this->_auto, false, true, 32);
+    cv::Mat blob;
+    cv::dnn::blobFromImage(img, blob, 1 / 255.0f, cv::Size(img.cols, img.rows),
+                           cv::Scalar(0, 0, 0), true, false);
+    std::vector<string> outLayerNames =
+        this->model.getUnconnectedOutLayersNames();
+    std::vector<cv::Mat> outs;
+    this->model.setInput(blob);
+    this->model.forward(outs, outLayerNames);
+
+    cv::Mat out(outs[0].size[1], outs[0].size[2], CV_32F, outs[0].ptr<float>());
+    std::vector<cv::Rect> boxes;
+    std::vector<float> scores;
+    std::vector<int> indices;
+    std::vector<int> classIndexList;
+    for (int r = 0; r < out.rows; r++) {
+        float cx = out.at<float>(r, 0);
+        float cy = out.at<float>(r, 1);
+        float w = out.at<float>(r, 2);
+        float h = out.at<float>(r, 3);
+        float sc = out.at<float>(r, 4);
+        cv::Mat confs = out.row(r).colRange(5, 85);
+        confs *= sc;
+        double minV, maxV;
+        cv::Point minI, maxI;
+
+        boxes.push_back(cv::Rect(cx - w / 2, cy - h / 2, w, h));
+        minMaxLoc(confs, &minV, &maxV, &minI, &maxI);
+        scores.push_back(maxV);
+        indices.push_back(r);
+        classIndexList.push_back(maxI.x);
+    }
+
+    cv::dnn::NMSBoxes(boxes, scores, this->confThreshold, this->nmsThreshold,
+                      indices);
+    std::vector<int> clsIndexs;
+    for (long unsigned int i = 0; i < indices.size(); i++) {
+        clsIndexs.push_back(classIndexList[indices[i]]);
+        boxesOut.push_back(boxes[indices[i]]);
+    }
+
+    detection.info = padInfo;
+    detection.boxes = boxesOut;
+
+    return detection;
 }
 
 std::vector<cv::Rect> Detector::postProcess(cv::Mat &img, Detection &detection,
@@ -98,50 +115,15 @@ std::vector<cv::Rect> Detector::postProcess(cv::Mat &img, Detection &detection,
 
     std::vector<cv::Rect> boxesOut;
 
+    boxesOut = detection.boxes;
     if (this->night == false) {
-        std::vector<cv::Mat> outs = detection.detection;
-        cv::Mat out(outs[0].size[1], outs[0].size[2], CV_32F,
-                    outs[0].ptr<float>());
-        std::vector<cv::Rect> boxes;
-        std::vector<float> scores;
-        std::vector<int> indices;
-        std::vector<int> classIndexList;
-        for (int r = 0; r < out.rows; r++) {
-            float cx = out.at<float>(r, 0);
-            float cy = out.at<float>(r, 1);
-            float w = out.at<float>(r, 2);
-            float h = out.at<float>(r, 3);
-            float sc = out.at<float>(r, 4);
-            cv::Mat confs = out.row(r).colRange(5, 85);
-            confs *= sc;
-            double minV, maxV;
-            cv::Point minI, maxI;
-
-            boxes.push_back(cv::Rect(cx - w / 2, cy - h / 2, w, h));
-            minMaxLoc(confs, &minV, &maxV, &minI, &maxI);
-            scores.push_back(maxV);
-            indices.push_back(r);
-            classIndexList.push_back(maxI.x);
-        }
-
-        cv::dnn::NMSBoxes(boxes, scores, this->confThreshold,
-                          this->nmsThreshold, indices);
-        std::vector<int> clsIndexs;
-        for (long unsigned int i = 0; i < indices.size(); i++) {
-            clsIndexs.push_back(classIndexList[indices[i]]);
-            boxesOut.push_back(boxes[indices[i]]);
-        }
-        // drawPrediction(img, boxes, scores, clsIndexs, indices, cl);
         std::vector<double> layersTimes;
         double freq = cv::getTickFrequency() / 1000;
         double t = this->model.getPerfProfile(layersTimes) / freq;
 
         detection.inference = t;
-        // std::string label = cv::format("Inference time : %.2f ms",
-        // detection.inference); putText(img, label, cv::Point(0, 15),
-        // cv::FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0), 1);
+        drawPredictionDay(img, boxesOut);
     } else {
-        boxesOut = detection.boxes;
         drawPredictionNight(img, boxesOut);
     }
 
@@ -181,54 +163,27 @@ void Detector::drawPrediction(cv::Mat &img, std::vector<cv::Rect> &boxes,
     }
 }
 
+void Detector::drawPredictionDay(cv::Mat &img, std::vector<cv::Rect> &boxes) {
+    cv::putText(img, "Night Mode OFF", cv::Point(img.rows - 200, 30),
+                cv::FONT_HERSHEY_PLAIN, 1.4, cv::Scalar(0, 255, 0), 2);
+
+    // for (size_t i = 0; i < boxes.size(); i++) {
+    //     rectangle(img, boxes[i], cv::Scalar(0, 255, 0), 1);
+    // }
+}
+
 void Detector::drawPredictionNight(cv::Mat &img, std::vector<cv::Rect> &boxes) {
     cv::putText(img, "Night Mode ON", cv::Point(img.rows - 200, 30),
                 cv::FONT_HERSHEY_PLAIN, 1.4, cv::Scalar(0, 255, 0), 2);
 
-    for (size_t i = 0; i < boxes.size(); i++) {
-        rectangle(img, boxes[i], cv::Scalar(0, 255, 0), 1);
-    }
-}
-
-vector<cv::Rect> Detector::makeBoxes(cv::Mat &img, Detection &detection) {
-    letterbox(img, this->inSize, cv::Scalar(114, 114, 114), this->_auto, false,
-              true, 32);
-
-    vector<cv::Rect> boxesOut;
-    std::vector<cv::Mat> outs = detection.detection;
-    cv::Mat out(outs[0].size[1], outs[0].size[2], CV_32F, outs[0].ptr<float>());
-    std::vector<cv::Rect> boxes;
-    std::vector<float> scores;
-    std::vector<int> indices;
-    std::vector<int> classIndexList;
-
-    for (int r = 0; r < out.rows; r++) {
-        float cx = out.at<float>(r, 0);
-        float cy = out.at<float>(r, 1);
-        float w = out.at<float>(r, 2);
-        float h = out.at<float>(r, 3);
-        float sc = out.at<float>(r, 4);
-        cv::Mat confs = out.row(r).colRange(5, 85);
-        confs *= sc;
-        double minV, maxV;
-        cv::Point minI, maxI;
-        minMaxLoc(confs, &minV, &maxV, &minI, &maxI);
-        scores.push_back(maxV);
-        boxes.push_back(cv::Rect(cx - w / 2, cy - h / 2, w, h));
-        indices.push_back(r);
-    }
-
-    cv::dnn::NMSBoxes(boxes, scores, this->confThreshold, this->nmsThreshold,
-                      indices);
-    for (long unsigned int i = 0; i < indices.size(); i++) {
-        boxesOut.push_back(boxes[indices[i]]);
-    }
-    return boxesOut;
+    // for (size_t i = 0; i < boxes.size(); i++) {
+    //     rectangle(img, boxes[i], cv::Scalar(0, 255, 0), 1);
+    // }
 }
 
 void Detector::setNight(bool night) {
     this->night = night;
-    this->pBackSub = cv::createBackgroundSubtractorKNN();
+    // this->pBackSub = cv::createBackgroundSubtractorKNN();
 }
 
 void Detector::preprocessNight(cv::Mat &img) {
@@ -385,25 +340,32 @@ vector<cv::Rect> pairHeadlights(vector<vector<cv::Point>> hulls) {
     return rectangles;
 }
 
-vector<cv::Rect> Detector::detectNight(cv::Mat &img) {
+Detection Detector::detectNight(cv::Mat &img) {
+    // Inference Time
+    cv::TickMeter timeRecorder;
+    // Call night mode detection
+    // vector<Mat> outs;
     vector<cv::Rect> rectangles;
     vector<vector<cv::Point>> hulls;
+    Detection detection;
+
+    PadInfo padInfo = letterbox(img, this->inSize, cv::Scalar(114, 114, 114),
+                                this->_auto, false, true, 32);
+    timeRecorder.start();
+    preprocessNight(img);
+
     hulls = getHulls(img);
-
-    // Mat drawing = Mat::zeros(img.size(), CV_8UC3);
     rectangles = pairHeadlights(hulls);
+    // imshow("Test 2", im);
 
-    // for(cv::Rect rectangle : rectangles)
-    // {
-    //     cv::rectangle(drawing, rectangle, cv::Scalar(0, 255, 0), 1);
-    // }
-    // for(size_t i = 0; i < hulls.size(); i++)
-    // {
-    //     cv::drawContours(drawing, hulls, i, Scalar(0, 0, 255), 1);
-    // }
+    detection.info = padInfo;
+    // detection.detection = outs;
+    detection.boxes = rectangles;
+    timeRecorder.stop();
+    float t = timeRecorder.getTimeMilli();
+    detection.inference = t;
 
-    // imshow("Test", drawing);
-    return rectangles;
+    return detection;
 }
 
 bool Detector::autoNightMode(cv::Mat &img, bool preview, PadInfo padInfo) {
