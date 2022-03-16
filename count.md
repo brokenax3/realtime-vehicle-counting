@@ -78,3 +78,6 @@ Smaller images require models with a higher mAP to produce a more accurate resul
    - Accuracy : 96.039604%
    - FPS : 90.9091
    - Inference Time : 0.683610ms
+
+# Kind of neural networks
+11

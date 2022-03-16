@@ -9,9 +9,9 @@ Debug
 *.pdf
 
 # Reports
-report
+# report
 
-!main.tex
+# !main.tex
 
 # Test Footage
 test_video
