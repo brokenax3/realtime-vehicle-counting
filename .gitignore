@@ -10,7 +10,7 @@ Debug
 
 # Reports
 report
-# !main.tex
+!report/final_report/main.tex
 
 # Test Footage
 test_video
