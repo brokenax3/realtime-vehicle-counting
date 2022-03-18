@@ -10,9 +10,11 @@ Debug
 
 # Reports
 report/*
+!report/text/
+!report/final_report/
+report/final_report/*
 !report/final_report/main.tex
 !report/final_report/references.bib
-
 # Test Footage
 test_video
 test_image
