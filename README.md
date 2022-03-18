@@ -5,6 +5,7 @@ Counting vehicles in real-time using OpenCV and Machine Vision
 # Requirements
 
 Running with CUDA would need an Nvidia GPU. The OpenCV backend and default target runs on a CPU.
+This application runs using CUDA by default.
 
 ## Getting ONNX Files
 
@@ -20,6 +21,9 @@ pip install -r requirements.txt
 python export.py --data data/coco.yaml --weights yolov5n.pt --include onnx      # Nano
 python export.py --data data/coco.yaml --weights yolov5s.pt --include onnx      # Small
 python export.py --data data/coco.yaml --weights yolov5l.pt --include onnx      # Large
+
+mkdir ../dnn_files
+mv *.onnx ../dnn_files
 ```
 
 ## Building
@@ -31,9 +35,15 @@ cmake --build build
 
 # Running
 
+Make sure that ONNX files are obtained from [YOLOv5](https://github.com/ultralytics/yolov5) and put
+into `$SOURCE_DIR/dnn_files`.
+
 ```
-# Print help
-./build/realtime-counting --(elp
+# Running with TUI Interface
+python python/rvc-tui.py
+
+# Running with binary file
+./build/realtime-counting --help
 ```
 
 ## Results

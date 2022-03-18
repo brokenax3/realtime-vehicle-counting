@@ -31,10 +31,10 @@ def get_config_values():
     input_roi_nightB = ptg.get_widget("input-night-roiB").value
 
     string_param = (
-        "../build/realtime-counting --model_path="
-        + "../dnn_files/"
+        "./build/realtime-counting --model_path="
+        + "./dnn_files/"
         + "".join(model).replace("Selected Model : ", "")
-        + " --class_path=../dnn_files/coco_c.names"
+        + " --class_path=./dnn_files/coco_c.names"
         + " --model_size=640"
         + " --roi_A="
         + "".join(input_roiA).replace(" ", "")
@@ -99,7 +99,7 @@ def start_rvc():
     label_output.padding = 2
 
 
-with open("namespace.yaml", "r") as ptg_file:
+with open("python/namespace.yaml", "r") as ptg_file:
     namespace = ptg.YamlLoader().load(ptg_file)
 
 with ptg.WindowManager() as manager:
