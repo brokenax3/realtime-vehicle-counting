@@ -158,11 +158,11 @@ int main(int argc, char* argv[]) {
             detection = detector.detect(frame);
             counter.setParams(roiA, roiB, detection.info);
         }
-
-        if ((frame_count % 120 == 0) && (force_night == 0)) {
-            isNight = detector.autoNightMode(frame, false, detection.info);
-            detector.setNight(isNight);
-        }
+        //
+        // if ((frame_count % 120 == 0) && (force_night == 0)) {
+        //     isNight = detector.autoNightMode(frame, false, detection.info);
+        //     detector.setNight(isNight);
+        // }
 
         detection = detector.detect(frame);
 

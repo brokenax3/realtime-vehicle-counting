@@ -1,4 +1,4 @@
-# realtime-vehicle-counting
+# Real-time Vehicle Counting
 
 Counting vehicles in real-time using OpenCV and Machine Vision
 
