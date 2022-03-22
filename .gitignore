@@ -16,6 +16,8 @@ report/final_report/*
 !report/final_report/main.tex
 !report/final_report/references.bib
 !report/final_report/figures/
+!report/final_report/report_tables.ods
+
 # Test Footage
 test_video
 test_image
