@@ -191,6 +191,10 @@ such that the model can be more robust.
 The data augmentation techniques used are Mosaic, MixUp, Random Affine (Rotation, Scaling,
 Translation and Shearing), HSV Augmentation, Copy-paste and Random Horizontal Flipping. 
 An example of data augmentation by YOLOv5 is shown in Fig. \ref{fig:data_augmentation}.
+Mosaic combines multiple images into one image.
+Next, MixUp combines two images by modifying the transparency of images.
+Furthermore, Copy-paste extracts segments from images and pastes into other images to create new
+training data.
 
 \begin{figure}[htbp]
     \begin{center}
@@ -422,7 +426,8 @@ linenos,
     --class_path="./dnn_files/coco_c.names" \
     --model_size=640 \
     --roi_A=640,100,0,0 \
-    --roi_B=640,100,0,350
+    --roi_B=640,100,0,350 \
+    --actual_count=239
 
 # rain_high_angle
 ./build/realtime-counting \
@@ -430,7 +435,8 @@ linenos,
     --class_path="./dnn_files/coco_c.names" \
     --model_size=640 \
     --roi_A=90,50,356,320 \
-    --roi_B=200,80,288,404
+    --roi_B=200,80,288,404 \
+    --actual_count=368
 
 # night_high_angle
 ./build/realtime-counting \
@@ -439,7 +445,9 @@ linenos,
     --model_size=640 \
     --roi_A=250,50,250,400 \
     --roi_B=300,60,200,454 \
-    --night_mode=1
+    --night_mode=1 \
+    --actual_count=101
+
 \end{minted}
 \caption{Running with the Command Line}
 \label{lst:clrun}

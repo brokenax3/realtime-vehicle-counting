@@ -17,15 +17,28 @@
 - Actual Count = 239
 
 1. yolov5n-opt + SORT + default roi
-   - Program count : 228
-   - Accuracy : 95.397491%
+   - Program count : 234
+   - Accuracy : 97.907951
    - FPS : 47.619
-   - Inference Time : 1.978215ms
+   - Inference Time : 1.894408ms
 2. yolov5s-opt + SORT + default roi
-   - Program count : 235
-   - Accuracy : 98.326363%
-   - FPS : 32.2581
-   - Inference Time : 2.047566ms
+   - Actual count : 239
+   - Program count : 243
+   - Accuracy : 98.326363
+   - FPS : 31.25
+   - Inference Time : 2.246295ms
+3. yolov5m-opt + SORT + default roi
+   - Actual count : 239
+   - Program count : 242
+   - Accuracy : 98.744766
+   - FPS : 19.2308
+   - Inference Time : 2.797125ms
+4. yolov5l-opt + SORT + default roi
+   - Actual count : 239
+   - Program count : 241
+   - Accuracy : 99.163177
+   - FPS : 11.7647
+   - Inference Time : 3.621556ms
 
 ## rain_high_angle
 
@@ -42,16 +55,30 @@
 
 - Actual Count = 368
 
-1. yolov5s-opt + SORT
+1. yolov5n-opt + SORT
+   - Actual Count = 368
+   - Program count : 366
+   - Accuracy : 99.456217
+   - FPS : 47.619
+   - Inference Time : 2.103620ms
+2. yolov5s-opt + SORT
+   - Actual count : 368
+   - Program count : 367
+   - Accuracy : 99.728264
+   - FPS : 28.5714
+   - Inference Time : 2.039811ms
+3. yolov5m-opt + SORT
+   - Actual count : 368
    - Program count : 368
-   - Accuracy : 100%
-   - FPS : 29.4118
-   - Inference Time : 2.035006ms
-2. yolov5n-opt + SORT + default roi
-   - Program count : 358
-   - Accuracy : 97.282608%
-   - FPS : 41.6667
-   - Inference Time : 2.189759ms
+   - Accuracy : 100.000000
+   - FPS : 19.6078
+   - Inference Time : 2.748721ms
+4. yolov5l-opt + SORT
+   - Actual count : 368
+   - Program count : 372
+   - Accuracy : 98.913040
+   - FPS : 11.3636
+   - Inference Time : 3.355781ms
 
 Smaller images require models with a higher mAP to produce a more accurate result.
 
@@ -80,4 +107,5 @@ Smaller images require models with a higher mAP to produce a more accurate resul
    - Inference Time : 0.683610ms
 
 # Kind of neural networks
+
 11
