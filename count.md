@@ -39,6 +39,12 @@
    - Accuracy : 99.163177
    - FPS : 11.7647
    - Inference Time : 3.621556ms
+5. traditional + SORT
+   - Actual count : 239
+   - Program count : 145
+   - Accuracy : 60.669456
+   - FPS : 90.9091
+   - Inference Time : 2.736931ms
 
 ## rain_high_angle
 
@@ -79,6 +85,12 @@
    - Accuracy : 98.913040
    - FPS : 11.3636
    - Inference Time : 3.355781ms
+5. traditional + SORT
+   - Actual count : 368
+   - Program count : 392
+   - Accuracy : 93.478264
+   - FPS : 90.9091
+   - Inference Time : 2.489109ms
 
 Smaller images require models with a higher mAP to produce a more accurate result.
 

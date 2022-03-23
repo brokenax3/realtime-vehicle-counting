@@ -63,6 +63,9 @@ po::variables_map parse_cmd(int argc, char* argv[]) {
         "Region of Interest 2 to for Night Automation");
     config_options.add_options()("preview", po::value<int>()->default_value(0),
                                  "Preview Mode");
+    config_options.add_options()("traditional",
+                                 po::value<int>()->default_value(0),
+                                 "Traditional Image Processing Mode");
 
     po::options_description cmdline_options;
     po::variables_map vm;

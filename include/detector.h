@@ -23,7 +23,6 @@ struct PadInfo {
 
 struct Detection {
     PadInfo info;
-    // std::vector<cv::Mat> detection;
     float inference;
     std::vector<cv::Rect> boxes;
 };
@@ -71,6 +70,7 @@ class Detector {
     std::vector<cv::Rect> postProcess(cv::Mat &img, Detection &detection,
                                       Colors &cl);
     void setNight(bool night);
+    void setTraditional(bool trad);
     void preprocessNight(cv::Mat &img);
     bool autoNightMode(cv::Mat &img, bool preview, PadInfo padInfo);
 
@@ -80,6 +80,7 @@ class Detector {
     cv::Size inSize;
     bool _auto;
     bool night;
+    bool traditional;
     vector<string> classNames;
     cv::dnn::Net model;
     cv::Ptr<cv::BackgroundSubtractor> pBackSub;
@@ -92,6 +93,7 @@ class Detector {
     void drawPredictionNight(cv::Mat &img, std::vector<cv::Rect> &boxes);
     Detection detectNight(cv::Mat &img);
     Detection detectDay(cv::Mat &img);
+    Detection detectTrad(cv::Mat &img);
     std::vector<cv::Rect> nightRois;
 };
 #endif

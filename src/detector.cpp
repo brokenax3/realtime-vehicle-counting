@@ -49,6 +49,10 @@ Detection Detector::detect(cv::Mat &img) {
     cv::Mat im;
     img.copyTo(im);
 
+    if (this->traditional == true) {
+        return detectTrad(im);
+    }
+
     if (this->night == true) {
         return detectNight(im);
     } else {
@@ -116,12 +120,14 @@ std::vector<cv::Rect> Detector::postProcess(cv::Mat &img, Detection &detection,
     std::vector<cv::Rect> boxesOut;
 
     boxesOut = detection.boxes;
-    if (this->night == false) {
+    if (this->night == false && this->traditional == false) {
         std::vector<double> layersTimes;
         double freq = cv::getTickFrequency() / 1000;
         double t = this->model.getPerfProfile(layersTimes) / freq;
 
         detection.inference = t;
+        drawPredictionDay(img, boxesOut);
+    } else if (this->night == false && this->traditional == true) {
         drawPredictionDay(img, boxesOut);
     } else {
         drawPredictionNight(img, boxesOut);
@@ -410,4 +416,51 @@ bool Detector::autoNightMode(cv::Mat &img, bool preview, PadInfo padInfo) {
     } else {
         return false;
     }
+}
+
+Detection Detector::detectTrad(cv::Mat &img) {
+    // Inference Time
+    cv::TickMeter timeRecorder;
+    cv::Mat mask;
+    cv::Mat tmpImg = img.clone();
+    Detection detection;
+    vector<cv::Rect> rectangles;
+    vector<vector<cv::Point>> hulls;
+
+    PadInfo padInfo = letterbox(tmpImg, this->inSize, cv::Scalar(114, 114, 114),
+                                this->_auto, false, true, 32);
+    timeRecorder.start();
+
+    pBackSub->apply(tmpImg, mask);
+    cv::Mat kernel = getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
+    cv::Mat ekernel = getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    erode(mask, mask, ekernel);
+    dilate(mask, mask, kernel);
+
+    hulls = getHulls(mask);
+    for (vector<cv::Point> hull : hulls) {
+        int area = cv::contourArea(hull);
+
+        if (area < 200) {
+            continue;
+        }
+        cv::Rect rect = boundingRect(hull);
+        rectangles.push_back(rect);
+
+        // rectangle(img, rect.br(), rect.tl(), cv::Scalar(255, 0, 0), 1);
+    }
+    detection.info = padInfo;
+    detection.boxes = rectangles;
+    timeRecorder.stop();
+    float t = timeRecorder.getTimeMilli();
+    detection.inference = t;
+
+    // imshow("Mask", mask);
+    // imshow("rect", img);
+
+    return detection;
+}
+void Detector::setTraditional(bool trad) {
+    this->traditional = trad;
+    this->pBackSub = cv::createBackgroundSubtractorKNN();
 }

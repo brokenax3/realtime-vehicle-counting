@@ -73,6 +73,12 @@ int main(int argc, char* argv[]) {
         detector.setNight(true);
     }
 
+    // Force traditional image processing method
+    int force_trad = vm["traditional"].as<int>() == 1;
+    if (force_trad) {
+        detector.setTraditional(true);
+    }
+
     // Open a video file or an image file or a camera stream.
     cv::VideoCapture cap;
     // cv::Mat frame = cv::imread("testimg3.png");
