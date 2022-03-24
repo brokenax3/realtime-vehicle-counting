@@ -19,7 +19,7 @@
 \usepackage{multirow}
 \usepackage{adjustbox}
 
-\title{Real-time Vehicle Counting using OpenCV}
+\title{Vehicle Counting on Highways using Computer Vision - Accuracy Enhancement}
 \author{Mark Cai Yee Lee}
 \date{March 2022}
 
@@ -52,11 +52,12 @@ flexibility.
 
 Finally, this project presents the performance of the application evaluated in terms of count
 accuracy and frames per second.
-It is concluded that deep learning demonstrates a high count accuracy in good lighting conditions.
+It is concluded that the vehicle counting accuracy is best when a combination of deep learning and
+traditional image processing is used for daytime and nighttime detection respectively.
+In this case, deep learning demonstrates a high count accuracy in good lighting conditions.
 On the other hand, traditional image processing and headlight paring shows a higher count accuracy
 as compared to deep learning object detection in low light conditions.
 
-% TODO: Fix abstract
 \end{abstract}
 
 \tableofcontents
@@ -84,7 +85,7 @@ real-time.
 The aim of this project is to improve upon the paper in \cite{rcvavc:2019}.
 The authors in \cite{rcvavc:2019} utilise traditional computer vision to count vehicles in real-time.
 In the paper, the authors use background subtraction to determine moving objects.
-Next, the paper use Gaussian Filtering to remove excess noise.
+Next, excess noise in frames are removed using Gaussian Filtering.
 The paper then process each frame to determine possible vehicle blobs using Morphological
 Filtering.
 Vehicle blobs are matched at every frame to track vehicles.
@@ -142,13 +143,16 @@ floating point operations per second requirement.
 
 \subsubsection{Architecture}
 The architecture of YOLOv5 has three main components, the backbone, the neck and the head.
-The architecture of YOLOv5l is shown in Fig. \ref{fig:yolov5-architecture}.
+The architecture of YOLOv5l is shown in Fig. \ref{fig:yolov5-architecture}. 
+In this figure, $k$ represents kernel size, $s$ is the stride and $p$ is the padding.
 YOLOv5l has an input of \mintinline{bash}{640x640x3}.
-A CNN backbone is a feature extractor.
 YOLOv5 uses a modified version of Cross Stage Partial Network Darknet53 (CSP-Darknet53) which is
 an improved version of Darknet53 introduced in YOLOv4 \cite{yolov4:2020} as the backbone.
-A backbone extracts complex features of input images to be passed into the neck.
+A CNN backbone is a feature extractor.
+A backbone attempts to extract the features of an input which can represent a class which the
+object detector detects.
 YOLOv5 extracts features at different granularities.
+The features are then passed into the neck of the network.
 
 \begin{figure}[htbp]
     \centering
@@ -174,6 +178,7 @@ YOLOv5 extracts features at different granularities.
 Next, the neck aggregates extracted features computed from the backbone.
 The neck of YOLOv5 uses Spatial Pyramid Pooling - Fast (SPPF) which is an improvement from Spatial Pyramid
 Pooling (SPP) \cite{spp:2014}.
+This improvement of SPPF is mathematically similar to SPP but incur a lower processing cost.
 Spatial Pyramid Pooling generates a fixed-length output regardless of input size.
 This removes the fixed-size constraint of CNNs \cite{spp:2014}.
 SPPF uses a cascaded SPP which is mathematically similar to SPP.
@@ -182,7 +187,8 @@ In addition, the neck of YOLOv5 uses a new Cross Stage Partial - Path Aggregatio
 This is an improvement from YOLOv4 which uses a Path Aggregation Network from the paper
 in\cite{pan:2018}.
 The CSP architecture is integrated to the PAN.
-This is observed in the \mintinline{bash}{C3-X-X} modules.
+This is observed in the \mintinline{bash}{C3-X-X} modules where a copy of the input is concactenated with the
+output of bottlenecks using the concat module before passing into the next module.
 A PAN aggregates the features extracted at different backbone levels and outputs to different
 head levels.
 
@@ -190,6 +196,8 @@ YOLOv5 uses the same head as YOLOv3 \cite{yolov3:2018}.
 This head uses anchor based detection steps and three detection levels varying in granularity.
 The different layers of granularity enables the network to achieve multiscale prediction.
 In this case, it can efficiently predict objects of different sizes.
+YOLOv5l has three outputs of different sizes, \mintinline{bash}{80x80x256},
+\mintinline{bash}{40x40x512} and \mintinline{bash}{20x20x1024}.
 
 
 \subsubsection{Data Augmentation}
@@ -228,9 +236,9 @@ Next, warm-up and cosine learning rate configures the rate of learning rate.
 Furthermore, exponential moving average maintains moving averages of variables by employing an exponential decay.
 Finally, hyperparameters evolution is used to fine-tune model training.
 
-% TODO: Maybe add Loss function
-% TODO:Maybe add Eliminate Grid Sensitivity
-% TODO: Maybe add Build Targets
+% TODO : Maybe add Loss function
+% TODO :Maybe add Eliminate Grid Sensitivity
+% TODO : Maybe add Build Targets
 
 \subsection{Simple, Online, Real-time Tracking (SORT)}
 The SORT algorithm has three components, Estimation, Association and Tracking \cite{sort:2016}.
@@ -691,8 +699,9 @@ The results of this experiment is reported in Tab. \ref{tab:result_nha_low_exp}.
 Traditional image processing demonstrates the highest count accuracy and FPS at $96.040\%$ and
 $90.909$ respectively.
 Next, YOLOv5n and YOLOv5l reports a count accuracy of $0.990\%$ and $8.911\%$ respectively.
-This is because low exposure removes key features from frames which deep learning detection methods
-need to identify objects.
+This is because low exposure removes details from images. 
+Details from images are key features which deep learning detection methods require in identifying
+objects. 
 
 \begin{table}[htbp]
     \begin{adjustbox}{width=1\textwidth}
@@ -710,7 +719,9 @@ need to identify objects.
 
 \chapter{Conclusion and Future Work}
 
-In conclusion, deep learning can be used to detect objects during daytime.
+In conclusion, the accuracy of vehicle counts are high when a combination of deep learning and
+traditional image processing is used in object detection.
+First, deep learning can be used to detect objects during daytime.
 This is demonstrated in the experiments test\_video and rain\_high\_angle.
 However, deep learning object detection methods can only demonstrate high accuracy when the
 lighting conditions in a video is good.
@@ -718,17 +729,19 @@ This is because deep learning detections methods need features to identify objec
 Low lighting conditions remove details in a video frame.
 Moreover, convolution neural networks can be used to detect objects in real-time.
 This is shown in the experiments where all YOLOv5 models demonstrate an accuracy higher than
-$97.908\%$.
+$97.908\%$ in the experiment test\_video.
 In addition, the experiments show that the performance of object counting can be sustained at low FPS.
 In this case, the accuracy of vehicle counting only decreases when FPS drops below $11.364\%$.
+The experiments also show that a deeper and wider convolutional neural networks can identify more
+details from a frame at the cost of higher processing overhead.
 Next, traditional image processing can be used to detect vehicles when there is video lighting is
 low.
 This is demonstrated in the experiments night\_high\_angle and night\_high\_angle\_low\_exposure.
 In the experiments, traditional image processing using headlight pairing reports an accuracy of
 $72.381\%$ and $96.040\%$ respectively.
-The two experiments during nighttime demonstrates that the accuracy of nighttime detection is higher
+The two experiments during nighttime demonstrates that the accuracy of nighttime detection is high
 when the exposure is low.
-This is due to morphological filtering and headlight pairing benefits from a lower number of details
+This is due to morphological filtering and headlight pairing benefit from a lower number of details
 in frames.
 
 A future research direction is to estimate the location and speed of a vehicle on a 2-D map.
