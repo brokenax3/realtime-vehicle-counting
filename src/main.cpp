@@ -71,12 +71,16 @@ int main(int argc, char* argv[]) {
     int force_night = vm["night_mode"].as<int>() == 1;
     if (force_night) {
         detector.setNight(true);
+    } else {
+        detector.setNight(false);
     }
 
     // Force traditional image processing method
     int force_trad = vm["traditional"].as<int>() == 1;
     if (force_trad) {
         detector.setTraditional(true);
+    } else {
+        detector.setTraditional(false);
     }
 
     // Open a video file or an image file or a camera stream.

@@ -104,7 +104,8 @@ Smaller images require models with a higher mAP to produce a more accurate resul
     --class_path="./dnn_files/coco_c.names" \
     --model_size=640 \
     --roi_A=250,50,250,400 \
-    --roi_B=300,60,200,454
+    --roi_B=300,60,200,454 \
+    --night_mode=1
 ```
 
 - Actual Count = 101
@@ -117,7 +118,37 @@ Smaller images require models with a higher mAP to produce a more accurate resul
    - Accuracy : 96.039604%
    - FPS : 90.9091
    - Inference Time : 0.683610ms
+2. yolov5l
+   - Actual count : 101
+   - Program count : 9
+   - Accuracy : 8.910889
+   - FPS : 10.8696
+   - Inference Time : 3.387015ms
+3. yolov5n
+   - Actual count : 101
+   - Program count : 1
+   - Accuracy : 0.990099
+   - FPS : 41.6667
+   - Inference Time : 2.044405ms
 
-# Kind of neural networks
+## night_high_angle
 
-11
+1. Night Vision
+   - night_high_angle
+   - Actual Count : 105
+   - Program count : 76
+   - Accuracy : 72.3809
+   - FPS : 71.4286
+   - Inference Time : 0.872760ms
+2. yolov5n
+   - Actual count : 105
+   - Program count : 4
+   - Accuracy : 3.8095
+   - FPS : 41.6667
+   - Inference Time : 2.029749ms
+3. yolov5l
+   - Actual count : 105
+   - Program count : 36
+   - Accuracy : 34.2857
+   - FPS : 11.6279
+   - Inference Time : 3.401693ms
