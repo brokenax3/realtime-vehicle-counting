@@ -44,6 +44,29 @@ python python/rvc-tui.py
 
 # Running with binary file
 ./build/realtime-counting --help
+
+General Options:
+  --help                                Print this help
+
+Required Options:
+  --model_path arg (=./dnn_files/yolov5n-opt.onnx)
+                                        Deep Learning Model
+  --class_path arg (=./dnn_files/coco_c.names)
+                                        Class Names
+  --model_size arg (=640)               Model Size
+  --actual_count arg (=239)             Actual Car Count
+  --roi_A arg (={640,100,0,0})          Width, Height and Coordinates
+                                        of Region of Interest A
+  --roi_B arg (={640,100,0,350})        Width, Height and Coordinates
+                                        of Region of Interest B
+  --night_mode arg (=0)                 Night Mode Toggle
+  --night_roi_1 arg (={20,20,0,0})      Region of Interest 1 to for
+                                        Night Automation
+  --night_roi_2 arg (={20,20,620,340})  Region of Interest 2 to for
+                                        Night Automation
+  --preview arg (=0)                    Preview Mode
+  --traditional arg (=0)                Traditional Image Processing Mode
+
 ```
 
 ## Results
